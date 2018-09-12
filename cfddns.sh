@@ -109,6 +109,8 @@ errorExplain=()
 dnsRecords=()
 cfDetails=()
 cfRecords=()
+currentIP=()
+recordID=()
 ip4=1
 ip6=0
 
@@ -241,6 +243,30 @@ else
         echo -e "${cfRecords[recordIdx]}"
     done
 fi
+
+
+## Get existing IP address and identifier in CloudFlare's DNS records
+for recordIdx in "${!cfRecords[@]}"; do
+    currentIP+=($(echo "${cfRecords[recordIdx]}" | \
+        grep -Po '(?<="content":")[^"]*'))
+    recordID+=($(echo "${cfRecords[recordIdx]}" | \
+        grep -Po '(?<="id":")[^"]*'))
+    echo -e "\e[1;36mIndex $recordIdx: \e[0mFor record\e[1;33m" \
+        "${dnsRecords[recordIdx]}\e[0m" \
+        "with ID: \e[1;33m${recordID[recordIdx]}\e[0m" \
+        "the current IP is \e[1;35m ${currentIP[recordIdx]}\e[0m"
+done
+
+## Check whether new IP matches old IP and update if they do not match
+for recordIdx in "${!currentIP[@]}"; do
+    if [ ${currentIP[recordIdx]} = $ipAddress ]; then
+        echo -e "\e[0;32m${dnsRecords[recordIdx]} is up-to-date."
+    else
+        echo -e "\e[0;31m${dnsRecords[recordIdx]} needs updating."
+    fi
+done
+
+
 
 quit
 
