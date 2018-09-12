@@ -26,6 +26,8 @@ exit 1
 unset PARAMS
 unset accountFile
 dnsRecords=()
+cfDetails=()
+
 
 ### Process script parameters
 if [ -z $1 ]; then
@@ -61,9 +63,16 @@ elif [ -z ${dnsRecords} ]; then
 fi
 
 
+## Extract needed information from accountDetails file
+mapfile -t cfDetails < "$accountFile"
+
+
 ### Echo results (testing)
-echo "Based on parameters provided:"
-echo "Login details at: ${accountFile}"
-echo "Updating records: ${dnsRecords[*]}"
+echo -e "\nBased on parameters provided:"
+echo -e "\e[0;35mLogin details at: ${accountFile}"
+echo -e "\tAuthorized email: ${cfDetails[0]}"
+echo -e "\tAuthorized key: ${cfDetails[1]}"
+echo -e "\tZone identifier: ${cfDetails[2]}"
+echo -e "\e[0;33mUpdating records: ${dnsRecords[*]}\e[0m\n"
 
 exit 0
