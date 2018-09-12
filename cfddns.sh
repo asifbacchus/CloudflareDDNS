@@ -4,23 +4,62 @@
 ### Define functions
 
 function scriptHelp {
-echo -e "\e[1;31mInvalid parameter(s) provided\e[0m"
-echo -e "\e[1;39mUsage: \e[1;36m$(basename ${0})" \
-    "\e[1;35m-f path/to/account/details.file" \
-    "\e[1;33m-r record.to.update\e[0m" \
-    "\e[1;33m[-r another.record.to.update -r ...]" \
-    "\e[0;92m[-i ipaddress]\e[0m\n"
-echo -e "\e[1;39mExample: \e[1;36m$(basename ${0})" \
-    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info" \
-    "\e[1;33m-r server.mydomain.com\e[0m"
-echo -e "\e[1;39mExample: \e[1;36m$(basename ${0})" \
-    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info" \
-    "\e[1;33m-r server.mydomain.com\e[0m" \
-    "\e[1;33m-r server2.mydomain.com\e[0m"
-echo -e "\e[1;39mExample: \e[1;36m$(basename ${0})" \
-    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info" \
-    "\e[1;33m-r server.mydomain.com" \
-    "\e[0;92m-i 1.2.3.4\e[0m"
+echo -e "\e[1;31mInvalid parameter(s) provided\e[0m\n"
+echo -e "\e[1;39mUsage:"
+echo -e "\e[1;36m$(basename ${0})" \
+    "\e[1;35m-f /path/to/account/details.file" \
+    "\e[1;33m-r record.to.update [-r another.record.to.update -r ...]"
+echo -e "\t\e[0;92m[optional parameters]\e[0m\n"
+echo -e "\e[1;39mNotes:\e[0m"
+echo -e "-f and -r parameters are REQUIRED."
+echo -e "Multiple A/AAAA records to update can be specified by supplying"
+echo -e "\tmultiple -r parameters (see examples below)."
+echo "This script can operate only in either IP4 OR IP6 mode. See below."
+echo "This script will NOT verify the format or validity of supplied IP"
+echo -e "\taddresses."
+echo -e "\n\e[1;39mOptional parameters\e[0m"
+echo -e "-i\tUse this IP address when updating DNS records"
+echo -e "\tIf NOT supplied, the script will attempt to auto-detect this"
+echo -e "\tmachine's IP address (depending on -4 or -6 parameters) and"
+echo -e "\tuse that address for DNS updates.  The script does NOT check"
+echo -e "\tthe validity of an address supplied using this parameter nor"
+echo -e "\tthe protocol type (IP4 vs IP6)."
+echo -e "-4\tOperate in IP4 mode and update A records (default)"
+echo -e "\tThis is the default operating mode and does not need to be"
+echo -e "\texplicitly specified.  Ensure you have supplied a valid IP4"
+echo -e "\taddress using the -i parameter or that your machine's IP4"
+echo -e "\taddress can be correctly detected externally."
+echo -e "-6\tOperate in IP6 mode and update AAAA records"
+echo -e "\tONLY AAAA records will be updated.  Ensure you have supplied"
+echo -e "\ta valid IP6 address using the -i parameter or that your"
+echo -e "\tmachine's IP6 address can be correctly detected externally."
+echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
+echo -e "file in /home/janedoe directory. Update server.mydomain.com A record"
+echo -e "with this machine's auto-detected IP4 address."
+echo -e "\t\e[1;36m$(basename ${0})" \
+    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
+echo -e "\t\e[1;33m-r server.mydomain.com\e[0m"
+echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
+echo -e "file in /home/janedoe directory. Update server.mydomain.com AND"
+echo -e "server2.mydomain.com A records with this machine's auto-detected IP6"
+echo -e "address."
+echo -e "\t\e[1;36m$(basename ${0})" \
+    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
+echo -e "\t\e[1;33m-r server.mydomain.com" \
+    "-r server2.mydomain.com \e[1;92m-6\e[0m"
+echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
+echo -e "file in /home/janedoe directory. Update server.mydomain.com A record"
+echo -e "using IP4 address 1.2.3.4."
+echo -e "\t\e[1;36m$(basename ${0})" \
+    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
+echo -e "\t\e[1;33m-r server.mydomain.com \e[1;92m-i 1.2.3.4\e[0m"
+echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
+echo -e "file in /home/janedoe directory. Update server3.mydomain.com AND"
+echo -e "server7.mydomain.com AAAA records using IP6 address FE80::286A:FF91."
+echo -e "\t\e[1;36m$(basename ${0})" \
+    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
+echo -e "\t\e[1;33m-r server.mydomain.com" \
+    "\e[1;33m-r server2.mydomain.com \e[1;92m-i FE80::286A:FF91\e[0m"
 exit 1
 }
 
@@ -107,6 +146,8 @@ if [ -z "$ipAddress" ]; then
         echo -e "\e[0;36mUsing IP address: $ipAddress"
     fi
 fi
+
+
 
 ### Echo results (testing)
 echo -e "\nBased on parameters provided:"
