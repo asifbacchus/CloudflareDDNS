@@ -72,6 +72,7 @@ unset accountFile
 unset ipAddress
 dnsRecords=()
 cfDetails=()
+record=()
 ip4=1
 ip6=0
 
@@ -149,13 +150,10 @@ fi
 
 
 ## Check if desired record(s) exist at CloudFlare
-for counter in "${dnsRecords[@]}"; do
-    record=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/ \
-        ${cfDetails[2]}/dns_records?name=${dnsRecords[counter]}&type=A" \
-        -H "X-Auth-Email: ${cfDetails[0]}" \
-        -H "X-Auth-Key: ${cfDetails[1]}" \
-        -H "Content-Type: application/json")
+for cfLookup in "${dnsRecords[@]}"; do
+record+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
 done
+
 
 ### Echo results (testing)
 echo -e "\nBased on parameters provided:"
@@ -169,5 +167,14 @@ if [ $ip4 -eq 1 ]; then
 elif [ $ip6 -eq 1 ]; then
     echo -e "\e[0;92mUpdating AAAA records"
 fi
-echo -e "\e[0;92mPointing records to IP: $ipAddress\e[0m\n"
+echo -e "\e[0;92mPointing records to IP: $ipAddress"
+echo -e "\e[0m\n"
+
+echo -e "\e[0;39mRecord check:"
+echo "Array length: ${#record[@]}"
+echo "Results:"
+for cfResult in "${record[@]}"; do
+    echo -e "\n$cfResult"
+done
+
 exit 0
