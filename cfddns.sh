@@ -260,9 +260,28 @@ done
 ## Check whether new IP matches old IP and update if they do not match
 for recordIdx in "${!currentIP[@]}"; do
     if [ ${currentIP[recordIdx]} = $ipAddress ]; then
-        echo -e "\e[0;32m${dnsRecords[recordIdx]} is up-to-date."
+        echo -e "\e[0;32m${dnsRecords[recordIdx]} is up-to-date.\e[0m"
     else
-        echo -e "\e[0;31m${dnsRecords[recordIdx]} needs updating."
+        echo -e "\e[0;31m${dnsRecords[recordIdx]} needs updating...\e[0m"
+        if [ $ip4 -eq 1 ]; then
+            # update record at CloudFlare with new IP
+            update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records/${recordID[recordIdx]}" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json" --data "{\"id\":\"${cfDetails[2]}\",\"type\":\"A\",\"proxied\":false,\"name\":\"${dnsRecords[recordIdx]}\",\"content\":\"$ipAddress\"}")
+            # check for success code from CloudFlare
+            if [[ $update == *"\"success\":true"* ]]; then
+                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m]"
+            else
+                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m"
+            fi
+        elif [ $ip6 -eq 1 ]; then
+            # update record at CloudFlare with new IP
+            update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records/${recordID[recordIdx]}" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json" --data "{\"id\":\"${cfDetails[2]}\",\"type\":\"AAAA\",\"proxied\":false,\"name\":\"${dnsRecords[recordIdx]}\",\"content\":\"$ipAddress\"}")
+            # check for success code from CloudFlare
+            if [[ $update == *"\"success\":true"* ]]; then
+                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m"
+            else
+                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m"
+            fi
+        fi
     fi
 done
 
