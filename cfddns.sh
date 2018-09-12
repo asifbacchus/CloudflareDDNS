@@ -150,9 +150,18 @@ fi
 
 
 ## Check if desired record(s) exist at CloudFlare
+echo -e "\e[0;36mPerforming CloudFlare lookup on specified DNS records...\e[0m"
 for cfLookup in "${dnsRecords[@]}"; do
 record+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
 done
+cfLookupResult=$(echo "$?")
+if [ "$ipLookupResult" -ne 0 ]; then
+    echo -e "\e[1;31mThere was a problem accessing the CloudFlare API"
+    echo -e "\e[0;31mPlease re-run this script later.\e[0m"
+    exit 254
+else
+    echo -e "\e[0;36m...done"
+fi
 
 
 ### Echo results (testing)
@@ -173,8 +182,13 @@ echo -e "\e[0m\n"
 echo -e "\e[0;39mRecord check:"
 echo "Array length: ${#record[@]}"
 echo "Results:"
-for cfResult in "${record[@]}"; do
-    echo -e "\n$cfResult"
+for recordIdx in "${!record[@]}"; do
+    echo -e "\n\e[0;33mResult for ${dnsRecords[recordIdx]}:\e[0m"
+    if [[ ${record[recordIdx]} == *"\"count\":0"* ]]; then
+        echo -e "\e[0;31m***not found in your CloudFlare DNS records***\e[0m"
+    else
+    echo -e "${record[recordIdx]}"
+    fi
 done
 
 exit 0
