@@ -148,6 +148,14 @@ if [ -z "$ipAddress" ]; then
 fi
 
 
+## Check if desired record(s) exist at CloudFlare
+for counter in "${dnsRecords[@]}"; do
+    record=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/ \
+        ${cfDetails[2]}/dns_records?name=${dnsRecords[counter]}&type=A" \
+        -H "X-Auth-Email: ${cfDetails[0]}" \
+        -H "X-Auth-Key: ${cfDetails[1]}" \
+        -H "Content-Type: application/json")
+done
 
 ### Echo results (testing)
 echo -e "\nBased on parameters provided:"
