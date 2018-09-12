@@ -8,7 +8,8 @@ echo -e "\e[1;31mInvalid parameter(s) provided\e[0m"
 echo -e "\e[1;39mUsage: \e[1;36m$(basename ${0})" \
     "\e[1;35m-f path/to/account/details.file" \
     "\e[1;33m-r record.to.update\e[0m" \
-    "\e[1;33m[-r another.record.to.update]\e[0m\n"
+    "\e[1;33m[-r another.record.to.update -r ...]" \
+    "\e[0;92m[-i ipaddress]\e[0m\n"
 echo -e "\e[1;39mExample: \e[1;36m$(basename ${0})" \
     "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info" \
     "\e[1;33m-r server.mydomain.com\e[0m"
@@ -16,6 +17,10 @@ echo -e "\e[1;39mExample: \e[1;36m$(basename ${0})" \
     "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info" \
     "\e[1;33m-r server.mydomain.com\e[0m" \
     "\e[1;33m-r server2.mydomain.com\e[0m"
+echo -e "\e[1;39mExample: \e[1;36m$(basename ${0})" \
+    "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info" \
+    "\e[1;33m-r server.mydomain.com" \
+    "\e[0;92m-i 1.2.3.4\e[0m"
 exit 1
 }
 
@@ -25,6 +30,7 @@ exit 1
 ### unset environment variables used in this script and initialize arrays
 unset PARAMS
 unset accountFile
+unset ipAddress
 dnsRecords=()
 cfDetails=()
 
@@ -33,13 +39,16 @@ cfDetails=()
 if [ -z $1 ]; then
     scriptHelp
 fi
-while getopts ':f:r:' PARAMS; do
+while getopts ':f:r:i:' PARAMS; do
     case "$PARAMS" in
         f)
             accountFile="${OPTARG}"
             ;;
         r)
             dnsRecords+=($OPTARG)
+            ;;
+        i)
+            ipAddress="$OPTARG"
             ;;
         ?)
             scriptHelp            
@@ -66,6 +75,20 @@ fi
 ## Extract needed information from accountDetails file
 mapfile -t cfDetails < "$accountFile"
 
+## Get current IP address, if not provided in parameters
+if [ -z "$ipAddress" ]; then
+    echo -e "\e[0;36mNo IP address for update provided.  Detecting" \
+        "this machine's IP address...\e[0m"
+    ipAddress=$(curl -s http://myip.dnsomatic.com)
+    if [ "$?" -ne 0 ]; then
+        echo -e "\e[1;31mIP address for update could not be detected."
+        echo -e "\e[0;31mPlease re-run script and specify an IP address" \
+            "to use via the -i flag.\e[0m"
+        exit 201
+    else
+        echo -e "\e[0;36mUsing IP address: $ipAddress"
+    fi
+fi
 
 ### Echo results (testing)
 echo -e "\nBased on parameters provided:"
@@ -73,6 +96,6 @@ echo -e "\e[0;35mLogin details at: ${accountFile}"
 echo -e "\tAuthorized email: ${cfDetails[0]}"
 echo -e "\tAuthorized key: ${cfDetails[1]}"
 echo -e "\tZone identifier: ${cfDetails[2]}"
-echo -e "\e[0;33mUpdating records: ${dnsRecords[*]}\e[0m\n"
-
+echo -e "\e[0;33mUpdating records: ${dnsRecords[*]}"
+echo -e "\e[1;39mPointing records to IP: $ipAddress\e[0m\n"
 exit 0
