@@ -4,11 +4,10 @@
 ### Define functions
 
 function scriptHelp {
-echo -e "\e[1;31mInvalid parameter(s) provided\e[0m\n"
 echo -e "\e[1;39mUsage:"
 echo -e "\e[1;36m$(basename ${0})" \
-    "\e[1;35m-f /path/to/account/details.file" \
-    "\e[1;33m-r record.to.update [-r another.record.to.update -r ...]"
+    "\e[1;35m-f /path/to/account/details.file"
+echo -e "\t\e[1;33m-r record.to.update [-r another.record.to.update -r ...]"
 echo -e "\t\e[0;92m[optional parameters]\e[0m\n"
 echo -e "\e[1;39mNotes:\e[0m"
 echo -e "-f and -r parameters are REQUIRED."
@@ -33,6 +32,19 @@ echo -e "-6\tOperate in IP6 mode and update AAAA records"
 echo -e "\tONLY AAAA records will be updated.  Ensure you have supplied"
 echo -e "\ta valid IP6 address using the -i parameter or that your"
 echo -e "\tmachine's IP6 address can be correctly detected externally."
+echo -e "-h\tDisplay this help page"
+echo -e "-x\tDisplay script examples"
+echo -e "\n\e[1;39mExamples:"
+echo -e "\e[0;39mRun \e[1;36m$(basename ${0}) \e[1;92m-x\e[0m\n"
+echo -e "\n"
+
+# exit with any error code used to call this help screen
+quit none $1
+}
+
+
+function scriptExamples {
+echo -e "\n\e[1;39m$(basename ${0}) Examples:\e[0m"
 echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
 echo -e "file in /home/janedoe directory. Update server.mydomain.com A record"
 echo -e "with this machine's auto-detected IP4 address."
@@ -60,7 +72,30 @@ echo -e "\t\e[1;36m$(basename ${0})" \
     "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
 echo -e "\t\e[1;33m-r server.mydomain.com" \
     "\e[1;33m-r server2.mydomain.com \e[1;92m-i FE80::286A:FF91\e[0m"
-exit 1
+
+quit none
+}
+
+
+function quit {
+    if [ -z "$1" ]; then
+        # exit cleanly
+        echo -e "\e[1;32m--[SUCCESS] Script completed --\e[0m"
+        exit 0
+    elif [ "$1" = "none" ]; then
+        if [ -z "$2" ]; then
+            # exit cleanly
+            exit 0
+        else
+            # exit with error code but don't display it
+            exit "$2"
+        fi
+    else
+        # notify use that error has occurred and provide exit code
+        echo -e "\e[1;31m-- [ERROR] Script exited with code $1 --"
+        echo -e "\e[0;31m${errorExplain[$1]}\e[0m"
+        exit "$1"
+    fi
 }
 
 ### end of functions
@@ -70,6 +105,7 @@ exit 1
 unset PARAMS
 unset accountFile
 unset ipAddress
+errorExplain=()
 dnsRecords=()
 cfDetails=()
 cfRecords=()
@@ -77,12 +113,23 @@ ip4=1
 ip6=0
 
 
+## define error code explainations
+errorExplain[1]="Missing or invalid parameters on script invocation."
+errorExplain[101]="Location of file with CloudFlare account details was NOT provided (-f parameter missing)."
+errorExplain[102]="CloudFlare account details file is empty or does not exist"
+errorExplain[103]="No DNS records to update were specified (-r parameter(s) missing)."
+errorExplain[104]="There are no DNS records specified that match those found in your CloudFlare account to update."
+errorExplain[201]="Could not detect this machine's IP address. Please re-run this script with the -i option."
+errorExplain[254]="Could not connect with CloudFlare API. Please re-run this script later."
+
+
 ### Process script parameters
 if [ -z $1 ]; then
-    scriptHelp
+    echo -e "\e[1;31mNo parameter(s) provided\e[0m\n"
+    scriptHelp 1
 fi
 
-while getopts ':f:r:i:46' PARAMS; do
+while getopts ':f:r:i:46hx' PARAMS; do
     case "$PARAMS" in
         f)
             accountFile="${OPTARG}"
@@ -101,25 +148,26 @@ while getopts ':f:r:i:46' PARAMS; do
             ip4=0
             ip6=1
             ;;
+        h)
+            scriptHelp
+            ;;
+        x)
+            scriptExamples
+            ;;
         ?)
-            scriptHelp            
+            echo -e "\e[1;31mInvalid parameter(s) provided\e[0m\n"
+            scriptHelp 1
             ;;
     esac
 done
 
 # Check validity of parameters
 if [ -z "$accountFile" ] || [[ $accountFile == -* ]]; then
-    echo -e "\e[1;31mNo file containing account details was specified."
-    echo -e "\e[0;31m(-f parameter empty or missing)\e[0m"
-    exit 101
+    quit 101
 elif [ ! -s "$accountFile" ]; then
-    echo -e "\e[1;31mAccount details file is either empty or does not" \
-        "exist.\e[0m"
-    exit 102
+    quit 102
 elif [ -z ${dnsRecords} ]; then
-    echo -e "\e[1;31mNo DNS records were specified."
-    echo -e "\e[0;31m(-r parameter(s) empty or missing)\e[0m"
-    exit 103
+    quit 103
 fi
 
 
@@ -139,10 +187,7 @@ if [ -z "$ipAddress" ]; then
     fi
     ipLookupResult=$(echo "$?")
     if [ "$ipLookupResult" -ne 0 ]; then
-        echo -e "\e[1;31mIP address for update could not be detected."
-        echo -e "\e[0;31mPlease re-run script and specify an IP address" \
-            "to use via the -i flag.\e[0m"
-        exit 201
+        quit 201
     else
         echo -e "\e[0;36mUsing IP address: $ipAddress"
     fi
@@ -158,9 +203,7 @@ done
 # check for curl errors
 cfLookupResult=$(echo "$?")
 if [ "$cfLookupResult" -ne 0 ]; then
-    echo -e "\e[1;31mThere was a problem accessing the CloudFlare API"
-    echo -e "\e[0;31mPlease re-run this script later.\e[0m"
-    exit 254
+    quit 254
 fi
 # check for any non-existant domain names and contract array accordingly
 for recordIdx in "${!cfRecords[@]}"; do
@@ -176,11 +219,19 @@ for recordIdx in "${!cfRecords[@]}"; do
         cfRecords=("${cfRecords[@]}")
     fi
 done
-# list array contents
-for recordIdx in "${!cfRecords[@]}"; do
-    echo -e "\n\e[0;33m Found ${dnsRecords[recordIdx]}" \
-        "(Index: $recordIdx):\e[0m"
-    echo -e "${cfRecords[recordIdx]}"
-done
+# after trimming errant records, it's possible dnsRecords array is empty
+# check for this condition and exit (nothing to do), otherwise list arrays
+if [ -z ${dnsRecords} ]; then
+    quit 104
+else
+    for recordIdx in "${!cfRecords[@]}"; do
+        echo -e "\n\e[0;33m Found ${dnsRecords[recordIdx]}" \
+            "(Index: $recordIdx):\e[0m"
+        echo -e "${cfRecords[recordIdx]}"
+    done
+fi
 
-exit 0
+quit
+
+# this code should never be executed
+exit 99
