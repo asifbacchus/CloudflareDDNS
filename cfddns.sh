@@ -196,16 +196,24 @@ fi
 
 ## Check if desired record(s) exist at CloudFlare
 echo -e "\e[0;36mPerforming CloudFlare lookup on specified DNS records...\e[0m"
-echo -e "\t(${dnsRecords[*]})"
-for cfLookup in "${dnsRecords[@]}"; do
-cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
-done
+# perform checks on A or AAAA records based on invocation options
+if [ $ip4 -eq 1 ]; then
+    echo -e "\t(IP4: ${dnsRecords[*]})"
+    for cfLookup in "${dnsRecords[@]}"; do
+    cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
+    done
+elif [ $ip6 -eq 1 ]; then
+    echo -e "\t(IP6: ${dnsRecords[*]})"
+    for cfLookup in "${dnsRecords[@]}"; do
+    cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=AAAA" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
+    done
+fi
 # check for curl errors
 cfLookupResult=$(echo "$?")
 if [ "$cfLookupResult" -ne 0 ]; then
     quit 254
 fi
-# check for any non-existant domain names and contract array accordingly
+# check for any non-existant domain names and remove from array
 for recordIdx in "${!cfRecords[@]}"; do
     if [[ ${cfRecords[recordIdx]} == *"\"count\":0"* ]]; then
         # inform user that domain not found in CloudFlare DNS records
@@ -213,19 +221,22 @@ for recordIdx in "${!cfRecords[@]}"; do
             "CloudFlare DNS records***\e[0m"
         # remove the entry from the dnsRecords array
         unset dnsRecords[$recordIdx]
-        dnsRecords=("${dnsRecords[@]}")
         # remove the entry from the records array
         unset cfRecords[$recordIdx]
-        cfRecords=("${cfRecords[@]}")
     fi
 done
+# contract the dnsRecords and cfRecords arrays to re-order them after any
+# deleted records
+dnsRecords=("${dnsRecords[@]}")
+cfRecords=("${cfRecords[@]}")
+
 # after trimming errant records, it's possible dnsRecords array is empty
 # check for this condition and exit (nothing to do), otherwise list arrays
 if [ -z ${dnsRecords} ]; then
     quit 104
 else
     for recordIdx in "${!cfRecords[@]}"; do
-        echo -e "\n\e[0;33m Found ${dnsRecords[recordIdx]}" \
+        echo -e "\n\e[0;33mFound ${dnsRecords[recordIdx]}" \
             "(Index: $recordIdx):\e[0m"
         echo -e "${cfRecords[recordIdx]}"
     done
