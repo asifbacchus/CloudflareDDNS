@@ -45,6 +45,17 @@ while getopts ':f:r:' PARAMS; do
     esac
 done
 
+# Check validity of parameters
+if [ -z "$accountFile" ] || [[ $accountFile == -* ]]; then
+    echo -e "\e[1;31mNo file containing account details was specified."
+    echo -e "\e[0;31m(-f parameter empty or missing)\e[0m"
+    exit 101
+elif [ -z ${dnsRecords} ]; then
+    echo -e "\e[1;31mNo DNS records were specified."
+    echo -e "\e[0;31m(-r parameter(s) empty or missing)\e[0m"
+    exit 102
+fi
+
 
 ### Echo results (testing)
 echo "Based on parameters provided:"
