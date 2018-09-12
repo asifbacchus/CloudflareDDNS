@@ -33,13 +33,16 @@ unset accountFile
 unset ipAddress
 dnsRecords=()
 cfDetails=()
+ip4=1
+ip6=0
 
 
 ### Process script parameters
 if [ -z $1 ]; then
     scriptHelp
 fi
-while getopts ':f:r:i:' PARAMS; do
+
+while getopts ':f:r:i:46' PARAMS; do
     case "$PARAMS" in
         f)
             accountFile="${OPTARG}"
@@ -49,6 +52,14 @@ while getopts ':f:r:i:' PARAMS; do
             ;;
         i)
             ipAddress="$OPTARG"
+            ;;
+        4)
+            ip4=1
+            ip6=0
+            ;;
+        6)
+            ip4=0
+            ip6=1
             ;;
         ?)
             scriptHelp            
@@ -78,9 +89,16 @@ mapfile -t cfDetails < "$accountFile"
 ## Get current IP address, if not provided in parameters
 if [ -z "$ipAddress" ]; then
     echo -e "\e[0;36mNo IP address for update provided.  Detecting" \
-        "this machine's IP address...\e[0m"
-    ipAddress=$(curl -s http://myip.dnsomatic.com)
-    if [ "$?" -ne 0 ]; then
+        "this machine's IP address..."
+    if [ $ip4 -eq 1 ]; then
+        echo -e "\e[1;36m(set to IP4 mode)\e[0m"
+        ipAddress=$(curl -s http://ipv4.icanhazip.com)
+    elif [ $ip6 -eq 1 ]; then
+        echo -e "\e[1;36m(set to IP6 mode)\e[0m"
+        ipAddress=$(curl -s http://ipv6.icanhazip.com)
+    fi
+    ipLookupResult=$(echo "$?")
+    if [ "$ipLookupResult" -ne 0 ]; then
         echo -e "\e[1;31mIP address for update could not be detected."
         echo -e "\e[0;31mPlease re-run script and specify an IP address" \
             "to use via the -i flag.\e[0m"
@@ -97,5 +115,10 @@ echo -e "\tAuthorized email: ${cfDetails[0]}"
 echo -e "\tAuthorized key: ${cfDetails[1]}"
 echo -e "\tZone identifier: ${cfDetails[2]}"
 echo -e "\e[0;33mUpdating records: ${dnsRecords[*]}"
-echo -e "\e[1;39mPointing records to IP: $ipAddress\e[0m\n"
+if [ $ip4 -eq 1 ]; then
+    echo -e "\e[0;92mUpdating A records"
+elif [ $ip6 -eq 1 ]; then
+    echo -e "\e[0;92mUpdating AAAA records"
+fi
+echo -e "\e[0;92mPointing records to IP: $ipAddress\e[0m\n"
 exit 0
