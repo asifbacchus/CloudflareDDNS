@@ -72,7 +72,7 @@ unset accountFile
 unset ipAddress
 dnsRecords=()
 cfDetails=()
-record=()
+cfRecords=()
 ip4=1
 ip6=0
 
@@ -151,44 +151,36 @@ fi
 
 ## Check if desired record(s) exist at CloudFlare
 echo -e "\e[0;36mPerforming CloudFlare lookup on specified DNS records...\e[0m"
+echo -e "\t(${dnsRecords[*]})"
 for cfLookup in "${dnsRecords[@]}"; do
-record+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
+cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
 done
+# check for curl errors
 cfLookupResult=$(echo "$?")
-if [ "$ipLookupResult" -ne 0 ]; then
+if [ "$cfLookupResult" -ne 0 ]; then
     echo -e "\e[1;31mThere was a problem accessing the CloudFlare API"
     echo -e "\e[0;31mPlease re-run this script later.\e[0m"
     exit 254
-else
-    echo -e "\e[0;36m...done"
 fi
-
-
-### Echo results (testing)
-echo -e "\nBased on parameters provided:"
-echo -e "\e[0;35mLogin details at: ${accountFile}"
-echo -e "\tAuthorized email: ${cfDetails[0]}"
-echo -e "\tAuthorized key: ${cfDetails[1]}"
-echo -e "\tZone identifier: ${cfDetails[2]}"
-echo -e "\e[0;33mUpdating records: ${dnsRecords[*]}"
-if [ $ip4 -eq 1 ]; then
-    echo -e "\e[0;92mUpdating A records"
-elif [ $ip6 -eq 1 ]; then
-    echo -e "\e[0;92mUpdating AAAA records"
-fi
-echo -e "\e[0;92mPointing records to IP: $ipAddress"
-echo -e "\e[0m\n"
-
-echo -e "\e[0;39mRecord check:"
-echo "Array length: ${#record[@]}"
-echo "Results:"
-for recordIdx in "${!record[@]}"; do
-    echo -e "\n\e[0;33mResult for ${dnsRecords[recordIdx]}:\e[0m"
-    if [[ ${record[recordIdx]} == *"\"count\":0"* ]]; then
-        echo -e "\e[0;31m***not found in your CloudFlare DNS records***\e[0m"
-    else
-    echo -e "${record[recordIdx]}"
+# check for any non-existant domain names and contract array accordingly
+for recordIdx in "${!cfRecords[@]}"; do
+    if [[ ${cfRecords[recordIdx]} == *"\"count\":0"* ]]; then
+        # inform user that domain not found in CloudFlare DNS records
+        echo -e "\e[0;31m***${dnsRecords[recordIdx]} not found in your" \
+            "CloudFlare DNS records***\e[0m"
+        # remove the entry from the dnsRecords array
+        unset dnsRecords[$recordIdx]
+        dnsRecords=("${dnsRecords[@]}")
+        # remove the entry from the records array
+        unset cfRecords[$recordIdx]
+        cfRecords=("${cfRecords[@]}")
     fi
+done
+# list array contents
+for recordIdx in "${!cfRecords[@]}"; do
+    echo -e "\n\e[0;33m Found ${dnsRecords[recordIdx]}" \
+        "(Index: $recordIdx):\e[0m"
+    echo -e "${cfRecords[recordIdx]}"
 done
 
 exit 0
