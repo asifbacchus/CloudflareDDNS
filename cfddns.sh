@@ -90,6 +90,12 @@ function quit {
             # exit with error code but don't display it
             exit "$2"
         fi
+    elif [ "$1" = "199" ]; then
+        # list DNS entries that were not updated
+        for failedName in "${failedDNS[@]}"; do
+            echo -e "\e[1;31m-- [ERROR] $failedName was NOT updated --\e[0m"
+        done
+        exit "$1"
     else
         # notify use that error has occurred and provide exit code
         echo -e "\e[1;31m-- [ERROR] Script exited with code $1 --"
@@ -111,6 +117,7 @@ cfDetails=()
 cfRecords=()
 currentIP=()
 recordID=()
+failedDNS=()
 ip4=1
 ip6=0
 
@@ -271,6 +278,7 @@ for recordIdx in "${!currentIP[@]}"; do
                 echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m]"
             else
                 echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m"
+                failedDNS+=("${dnsRecords[recordIdx]}")
             fi
         elif [ $ip6 -eq 1 ]; then
             # update record at CloudFlare with new IP
@@ -280,14 +288,18 @@ for recordIdx in "${!currentIP[@]}"; do
                 echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m"
             else
                 echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m"
+                failedDNS+=("${dnsRecords[recordIdx]}")
             fi
         fi
     fi
 done
 
-
-
-quit
+# Check if failedDNS array contains entries and exit with error, else exit 0
+if [ -z "${failedDNS}" ]; then
+    quit
+else
+    quit 199
+fi
 
 # this code should never be executed
 exit 99
