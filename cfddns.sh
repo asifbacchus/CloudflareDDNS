@@ -34,6 +34,9 @@ echo -e "\ta valid IP6 address using the -i parameter or that your"
 echo -e "\tmachine's IP6 address can be correctly detected externally."
 echo -e "-h\tDisplay this help page"
 echo -e "-x\tDisplay script examples"
+echo -e "-l\tLocation for log file output (default: scriptname.log in same" \
+    "same directory"
+echo -e "-v\tTurn on verbose logging (default: quiet)"
 echo -e "\n\e[1;39mExamples:"
 echo -e "\e[0;39mRun \e[1;36m$(basename ${0}) \e[1;92m-x\e[0m\n"
 echo -e "\n"
@@ -136,7 +139,7 @@ errorExplain[254]="Could not connect with CloudFlare API. Please re-run this scr
 ## Logging parameters -- default set to 'quiet' (i.e. the logFile) in same 
 ## directory as this script
 scriptPath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-logFile="$scriptPath/cfddns.log"
+logFile="$scriptPath/$(basename ${0}).log"
 unset logVerboseFile
 
 
