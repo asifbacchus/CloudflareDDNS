@@ -34,8 +34,8 @@ echo -e "\ta valid IP6 address using the -i parameter or that your"
 echo -e "\tmachine's IP6 address can be correctly detected externally."
 echo -e "-h\tDisplay this help page"
 echo -e "-x\tDisplay script examples"
-echo -e "-l\tLocation for log file output (default: scriptname.log in same" \
-    "same directory"
+echo -e "-l\tLocation for log file output"
+echo -e "\tDefault: scriptname.ext.log in same directory as this script"
 echo -e "-v\tTurn on verbose logging (default: quiet)"
 echo -e "\n\e[1;39mExamples:"
 echo -e "\e[0;39mRun \e[1;36m$(basename ${0}) \e[1;92m-x\e[0m\n"
@@ -83,7 +83,8 @@ quit none
 function quit {
     if [ -z "$1" ]; then
         # exit cleanly
-        echo -e "\e[1;32m--[SUCCESS] Script completed --\e[0m" >> $logFile
+        echo -e "\e[1;32m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+        "--[SUCCESS] Script completed --\e[0m" >> $logFile
         exit 0
     elif [ "$1" = "none" ]; then
         if [ -z "$2" ]; then
@@ -96,13 +97,14 @@ function quit {
     elif [ "$1" = "199" ]; then
         # list DNS entries that were not updated
         for failedName in "${failedDNS[@]}"; do
-            echo -e "\e[1;31m-- [ERROR] $failedName was NOT updated --\e[0m" \
-                >> $logFile
+            echo -e "\e[1;31m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+            "-- [ERROR] $failedName was NOT updated --\e[0m" >> $logFile
         done
         exit "$1"
     else
         # notify use that error has occurred and provide exit code
-        echo -e "\e[1;31m-- [ERROR] Script exited with code $1 --" >> $logFile
+        echo -e "\e[1;31m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+        "-- [ERROR] Script exited with code $1 --" >> $logFile
         echo -e "\e[0;31m${errorExplain[$1]}\e[0m" >> $logFile
         exit "$1"
     fi
@@ -195,8 +197,8 @@ while getopts ':f:r:i:46hxl:v' PARAMS; do
 done
 
 # Log beginning of script
-echo -e "\e[1;32m [`date %Y-%m-%d` `date %H:%M:%S`] -- Start script execution" \
-    "--\e[0m" >> $logFile
+echo -e "\e[1;32m [`date +%Y-%m-%d` `date +%H:%M:%S`] -- Start CloudFlare" \
+    "DDNS script execution --\e[0m" >> $logFile
 
 # Check validity of parameters
 if [ -z "$accountFile" ] || [[ $accountFile == -* ]]; then
@@ -209,11 +211,11 @@ fi
 
 # Log operating mode
 if [ $ip4 -eq 1 ]; then
-    echo -e "\e[1;36m [`date %Y-%m-%d` `date %H:%M:%S`] Script running in IP4" \
-        "mode\e[0m" >> $logFile
+    echo -e "\e[1;36m [`date +%Y-%m-%d` `date +%H:%M:%S`] Script running in" \
+        "IP4 mode\e[0m" >> $logFile
 elif [ $ip6 -eq 1 ]; then
-    echo -e "\e[1;36m [`date %Y-%m-%d` `date %H:%M:%S`] Script running in IP6" \
-        "mode\e[0m" >> $logFile
+    echo -e "\e[1;36m [`date +%Y-%m-%d` `date +%H:%M:%S`] Script running in" \
+        "IP6 mode\e[0m" >> $logFile
 fi
 
 
@@ -222,8 +224,9 @@ mapfile -t cfDetails < "$accountFile"
 
 ## Get current IP address, if not provided in parameters
 if [ -z "$ipAddress" ]; then
-    echo -e "\e[0;36mNo IP address for update provided.  Detecting" \
-        "this machine's IP address..."  >> $logVerboseFile
+    echo -e "\e[0;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] No IP address for" \
+        "update provided.  Detecting this machine's IP address..." \
+        >> $logVerboseFile
     if [ $ip4 -eq 1 ]; then
         ipAddress=$(curl -s http://ipv4.icanhazip.com)
     elif [ $ip6 -eq 1 ]; then
@@ -235,21 +238,24 @@ if [ -z "$ipAddress" ]; then
         quit 201
     fi
 else
-    echo -e "\e[0;36mUsing IP address: $ipAddress" >> $logFile
+    echo -e "\e[0;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Using IP address:" \
+        "$ipAddress" >> $logFile
 fi
 
 
 ## Check if desired record(s) exist at CloudFlare
-echo -e "\e[0;36mPerforming CloudFlare lookup on specified DNS" \
-    "records...\e[0m" >> $logVerboseFile
+echo -e "\e[0;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Performing CloudFlare" \
+    "lookup on specified DNS records...\e[0m" >> $logVerboseFile
 # perform checks on A or AAAA records based on invocation options
 if [ $ip4 -eq 1 ]; then
-    echo -e "\t(IP4: ${dnsRecords[*]})"
+    echo -e "[`date +%Y-%m-%d` `date +%H:%M:%S`] (IP4: ${dnsRecords[*]})" \
+        >> $logVerboseFile
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
     done
 elif [ $ip6 -eq 1 ]; then
-    echo -e "\t(IP6: ${dnsRecords[*]})"
+    echo -e "[`date +%Y-%m-%d` `date +%H:%M:%S`] (IP6: ${dnsRecords[*]})" \
+        >> $logVerboseFile
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=AAAA" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
     done
@@ -263,7 +269,8 @@ fi
 for recordIdx in "${!cfRecords[@]}"; do
     if [[ ${cfRecords[recordIdx]} == *"\"count\":0"* ]]; then
         # inform user that domain not found in CloudFlare DNS records
-        echo -e "\e[0;31m***${dnsRecords[recordIdx]} not found in your" \
+        echo -e "\e[0;31m[`date +%Y-%m-%d` `date +%H:%M:%S`] ***" \
+            "${dnsRecords[recordIdx]} not found in your" \
             "CloudFlare DNS records***\e[0m" >> $logVerboseFile
         # remove the entry from the dnsRecords array
         unset dnsRecords[$recordIdx]
@@ -282,8 +289,9 @@ if [ -z ${dnsRecords} ]; then
     quit 104
 else
     for recordIdx in "${!cfRecords[@]}"; do
-        echo -e "\n\e[0;33mFound ${dnsRecords[recordIdx]}" \
-            "(Index: $recordIdx):\e[0m" >> $logVerboseFile
+        echo -e "\e[0;33m[`date +%Y-%m-%d` `date +%H:%M:%S`] Found" \
+            "${dnsRecords[recordIdx]} (Index: $recordIdx):\e[0m" \
+            >> $logVerboseFile
         echo -e "${cfRecords[recordIdx]}" >> $logVerboseFile
     done
 fi
@@ -295,8 +303,8 @@ for recordIdx in "${!cfRecords[@]}"; do
         grep -Po '(?<="content":")[^"]*'))
     recordID+=($(echo "${cfRecords[recordIdx]}" | \
         grep -Po '(?<="id":")[^"]*'))
-    echo -e "\e[1;36mIndex $recordIdx: \e[0mFor record\e[1;33m" \
-        "${dnsRecords[recordIdx]}\e[0m" \
+    echo -e "\e[1;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Index $recordIdx:" \
+        "\e[0mFor record\e[1;33m ${dnsRecords[recordIdx]}\e[0m" \
         "with ID: \e[1;33m${recordID[recordIdx]}\e[0m" \
         "the current IP is \e[1;35m ${currentIP[recordIdx]}" \
         "\e[0m" >> $logVerboseFile
@@ -305,21 +313,23 @@ done
 ## Check whether new IP matches old IP and update if they do not match
 for recordIdx in "${!currentIP[@]}"; do
     if [ ${currentIP[recordIdx]} = $ipAddress ]; then
-        echo -e "\e[0;32m${dnsRecords[recordIdx]} is up-to-date.\e[0m" \
+        echo -e "\e[0;32m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+        "${dnsRecords[recordIdx]} is up-to-date.\e[0m" \
             >> $logVerboseFile
     else
-        echo -e "\e[0;31m${dnsRecords[recordIdx]} needs updating...\e[0m" \
+        echo -e "\e[0;31m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+        "${dnsRecords[recordIdx]} needs updating...\e[0m" \
             >> $logVerboseFile
         if [ $ip4 -eq 1 ]; then
             # update record at CloudFlare with new IP
             update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records/${recordID[recordIdx]}" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json" --data "{\"id\":\"${cfDetails[2]}\",\"type\":\"A\",\"proxied\":false,\"name\":\"${dnsRecords[recordIdx]}\",\"content\":\"$ipAddress\"}")
             # check for success code from CloudFlare
             if [[ $update == *"\"success\":true"* ]]; then
-                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m]" \
-                >> $logFile
+                echo -e "\e[1;32m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+                "${dnsRecords[recordIdx]} updated.\e[0m]" >> $logFile
             else
-                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m" \
-                    >> $logFile
+                echo -e "\e[1;31m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+                "${dnsRecords[recordIdx]} update failed\e[0m" >> $logFile
                 echo -e "\e[0;39m$update" >> $logVerboseFile
                 failedDNS+=("${dnsRecords[recordIdx]}")
             fi
@@ -328,11 +338,11 @@ for recordIdx in "${!currentIP[@]}"; do
             update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records/${recordID[recordIdx]}" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json" --data "{\"id\":\"${cfDetails[2]}\",\"type\":\"AAAA\",\"proxied\":false,\"name\":\"${dnsRecords[recordIdx]}\",\"content\":\"$ipAddress\"}")
             # check for success code from CloudFlare
             if [[ $update == *"\"success\":true"* ]]; then
-                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m" \
-                    >> $logFile
+                echo -e "\e[1;32m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+                "${dnsRecords[recordIdx]} updated.\e[0m" >> $logFile
             else
-                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m" \
-                    >> $logFile
+                echo -e "\e[1;31m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+                "${dnsRecords[recordIdx]} update failed\e[0m" >> $logFile
                 echo -e "\e[0;39m$update" >> $logVerboseFile
                 failedDNS+=("${dnsRecords[recordIdx]}")
             fi
