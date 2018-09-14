@@ -217,12 +217,10 @@ mapfile -t cfDetails < "$accountFile"
 ## Get current IP address, if not provided in parameters
 if [ -z "$ipAddress" ]; then
     echo -e "\e[0;36mNo IP address for update provided.  Detecting" \
-        "this machine's IP address..."
+        "this machine's IP address..."  >> $logVerboseFile
     if [ $ip4 -eq 1 ]; then
-        echo -e "\e[1;36m(set to IP4 mode)\e[0m"
         ipAddress=$(curl -s http://ipv4.icanhazip.com)
     elif [ $ip6 -eq 1 ]; then
-        echo -e "\e[1;36m(set to IP6 mode)\e[0m"
         ipAddress=$(curl -s http://ipv6.icanhazip.com)
     fi
     # check if curl reported any errors
@@ -231,7 +229,7 @@ if [ -z "$ipAddress" ]; then
         quit 201
     fi
 else
-    echo -e "\e[0;36mUsing IP address: $ipAddress"
+    echo -e "\e[0;36mUsing IP address: $ipAddress" >> $logFile
 fi
 
 
