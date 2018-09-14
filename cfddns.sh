@@ -283,7 +283,7 @@ if [ -z ${dnsRecords} ]; then
     quit 104
 else
     for recordIdx in "${!cfRecords[@]}"; do
-        echo -e "\e[1;33m[`date +%Y-%m-%d` `date +%H:%M:%S`] Found" \
+        echo -e "\e[1;39m[`date +%Y-%m-%d` `date +%H:%M:%S`] Found" \
             "${dnsRecords[recordIdx]} (Index: $recordIdx):\e[0m" \
             >> $logFile
     done
@@ -296,9 +296,9 @@ for recordIdx in "${!cfRecords[@]}"; do
         grep -Po '(?<="content":")[^"]*'))
     recordID+=($(echo "${cfRecords[recordIdx]}" | \
         grep -Po '(?<="id":")[^"]*'))
-    echo -e "\e[1;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Index $recordIdx:" \
-        "\e[0mFor record\e[1;33m ${dnsRecords[recordIdx]}\e[0m" \
-        "with ID: \e[1;33m${recordID[recordIdx]}\e[0m" \
+    echo -e "\e[0m[`date +%Y-%m-%d` `date +%H:%M:%S`] Index $recordIdx:" \
+        "For record ${dnsRecords[recordIdx]}" \
+        "with ID: ${recordID[recordIdx]}" \
         "the current IP is \e[1;35m ${currentIP[recordIdx]}" \
         "\e[0m" >> $logFile
 done
@@ -306,7 +306,7 @@ done
 ## Check whether new IP matches old IP and update if they do not match
 for recordIdx in "${!currentIP[@]}"; do
     if [ ${currentIP[recordIdx]} = $ipAddress ]; then
-        echo -e "\e[0;32m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
+        echo -e "\e[1;32m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
         "${dnsRecords[recordIdx]} is up-to-date.\e[0m" \
             >> $logFile
     else
