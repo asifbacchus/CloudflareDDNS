@@ -188,6 +188,10 @@ while getopts ':f:r:i:46hxlv' PARAMS; do
     esac
 done
 
+# Log beginning of script
+echo -e "\e[1;32m [`date %Y-%m-%d` `date %H:%M:%S`] -- Start script execution" \
+    "--\e[0m" >> $logFile
+
 # Check validity of parameters
 if [ -z "$accountFile" ] || [[ $accountFile == -* ]]; then
     quit 101
@@ -195,6 +199,15 @@ elif [ ! -s "$accountFile" ]; then
     quit 102
 elif [ -z ${dnsRecords} ]; then
     quit 103
+fi
+
+# Log operating mode
+if [ $ip4 -eq 1 ]; then
+    echo -e "\e[1;36m [`date %Y-%m-%d` `date %H:%M:%S`] Script running in IP4" \
+        "mode\e[0m" >> $logFile
+elif [ $ip6 -eq 1 ]; then
+    echo -e "\e[1;36m [`date %Y-%m-%d` `date %H:%M:%S`] Script running in IP6" \
+        "mode\e[0m" >> $logFile
 fi
 
 
