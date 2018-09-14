@@ -36,7 +36,6 @@ echo -e "-h\tDisplay this help page"
 echo -e "-x\tDisplay script examples"
 echo -e "-l\tLocation for log file output"
 echo -e "\tDefault: scriptname.ext.log in same directory as this script"
-echo -e "-v\tTurn on verbose logging (default: quiet)"
 echo -e "\n\e[1;39mExamples:"
 echo -e "\e[0;39mRun \e[1;36m$(basename ${0}) \e[1;92m-x\e[0m\n"
 echo -e "\n"
@@ -138,11 +137,10 @@ errorExplain[201]="Could not detect this machine's IP address. Please re-run thi
 errorExplain[254]="Could not connect with CloudFlare API. Please re-run this script later."
 
 
-## Logging parameters -- default set to 'quiet' (i.e. the logFile) in same 
+## Logging parameters -- default set to scriptname.ext.log in same 
 ## directory as this script
 scriptPath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 logFile="$scriptPath/$(basename ${0}).log"
-logFileVerbose="/dev/null"
 
 
 ### Process script parameters
@@ -150,7 +148,7 @@ if [ -z $1 ]; then
     scriptHelp 1
 fi
 
-while getopts ':f:r:i:46hxl:v' PARAMS; do
+while getopts ':f:r:i:46hxl:' PARAMS; do
     case "$PARAMS" in
         f)
             # path to file with CloudFlare account details
@@ -185,10 +183,6 @@ while getopts ':f:r:i:46hxl:v' PARAMS; do
         l)
             # Path to write log file
             logFile="${OPTARG}"
-            ;;
-        v)
-            # Verbose logging mode
-            logFileVerbose="$logFile"
             ;;
         ?)
             scriptHelp 1
@@ -226,7 +220,7 @@ mapfile -t cfDetails < "$accountFile"
 if [ -z "$ipAddress" ]; then
     echo -e "\e[1;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] No IP address for" \
         "update provided.  Detecting this machine's IP address..." \
-        >> $logFileVerbose
+        >> $logFile
     if [ $ip4 -eq 1 ]; then
         ipAddress=$(curl -s http://ipv4.icanhazip.com)
     elif [ $ip6 -eq 1 ]; then
@@ -245,17 +239,17 @@ fi
 
 ## Check if desired record(s) exist at CloudFlare
 echo -e "\e[0m[`date +%Y-%m-%d` `date +%H:%M:%S`] Performing CloudFlare" \
-    "lookup on specified DNS records...\e[0m" >> $logFileVerbose
+    "lookup on specified DNS records...\e[0m" >> $logFile
 # perform checks on A or AAAA records based on invocation options
 if [ $ip4 -eq 1 ]; then
     echo -e "[`date +%Y-%m-%d` `date +%H:%M:%S`] (IP4: ${dnsRecords[*]})" \
-        >> $logFileVerbose
+        >> $logFile
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
     done
 elif [ $ip6 -eq 1 ]; then
     echo -e "[`date +%Y-%m-%d` `date +%H:%M:%S`] (IP6: ${dnsRecords[*]})" \
-        >> $logFileVerbose
+        >> $logFile
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=AAAA" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
     done
@@ -271,7 +265,7 @@ for recordIdx in "${!cfRecords[@]}"; do
         # inform user that domain not found in CloudFlare DNS records
         echo -e "\e[0;31m[`date +%Y-%m-%d` `date +%H:%M:%S`] ***" \
             "${dnsRecords[recordIdx]} not found in your" \
-            "CloudFlare DNS records***\e[0m" >> $logFileVerbose
+            "CloudFlare DNS records***\e[0m" >> $logFile
         # remove the entry from the dnsRecords array
         unset dnsRecords[$recordIdx]
         # remove the entry from the records array
@@ -291,7 +285,7 @@ else
     for recordIdx in "${!cfRecords[@]}"; do
         echo -e "\e[1;33m[`date +%Y-%m-%d` `date +%H:%M:%S`] Found" \
             "${dnsRecords[recordIdx]} (Index: $recordIdx):\e[0m" \
-            >> $logFileVerbose
+            >> $logFile
     done
 fi
 
@@ -306,7 +300,7 @@ for recordIdx in "${!cfRecords[@]}"; do
         "\e[0mFor record\e[1;33m ${dnsRecords[recordIdx]}\e[0m" \
         "with ID: \e[1;33m${recordID[recordIdx]}\e[0m" \
         "the current IP is \e[1;35m ${currentIP[recordIdx]}" \
-        "\e[0m" >> $logFileVerbose
+        "\e[0m" >> $logFile
 done
 
 ## Check whether new IP matches old IP and update if they do not match
@@ -333,7 +327,7 @@ for recordIdx in "${!currentIP[@]}"; do
         else
             echo -e "\e[1;31m[`date +%Y-%m-%d` `date +%H:%M:%S`]" \
                 "${dnsRecords[recordIdx]} update failed\e[0m" >> $logFile
-                echo -e "\e[0;39m$update\e[0m" >> $logFileVerbose
+                echo -e "\e[0;39m$update\e[0m" >> $logFile
             failedDNS+=("${dnsRecords[recordIdx]}")
         fi        
     fi
