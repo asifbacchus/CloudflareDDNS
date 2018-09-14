@@ -192,12 +192,13 @@ if [ -z "$ipAddress" ]; then
         echo -e "\e[1;36m(set to IP6 mode)\e[0m"
         ipAddress=$(curl -s http://ipv6.icanhazip.com)
     fi
+    # check if curl reported any errors
     ipLookupResult=$(echo "$?")
     if [ "$ipLookupResult" -ne 0 ]; then
         quit 201
-    else
-        echo -e "\e[0;36mUsing IP address: $ipAddress"
     fi
+else
+    echo -e "\e[0;36mUsing IP address: $ipAddress"
 fi
 
 
