@@ -224,7 +224,7 @@ mapfile -t cfDetails < "$accountFile"
 
 ## Get current IP address, if not provided in parameters
 if [ -z "$ipAddress" ]; then
-    echo -e "\e[0;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] No IP address for" \
+    echo -e "\e[1;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] No IP address for" \
         "update provided.  Detecting this machine's IP address..." \
         >> $logFileVerbose
     if [ $ip4 -eq 1 ]; then
@@ -238,13 +238,13 @@ if [ -z "$ipAddress" ]; then
         quit 201
     fi
 else
-    echo -e "\e[0;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Using IP address:" \
+    echo -e "\e[1;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Using IP address:" \
         "$ipAddress" >> $logFile
 fi
 
 
 ## Check if desired record(s) exist at CloudFlare
-echo -e "\e[0;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Performing CloudFlare" \
+echo -e "\e[0m[`date +%Y-%m-%d` `date +%H:%M:%S`] Performing CloudFlare" \
     "lookup on specified DNS records...\e[0m" >> $logFileVerbose
 # perform checks on A or AAAA records based on invocation options
 if [ $ip4 -eq 1 ]; then
@@ -289,7 +289,7 @@ if [ -z ${dnsRecords} ]; then
     quit 104
 else
     for recordIdx in "${!cfRecords[@]}"; do
-        echo -e "\e[0;33m[`date +%Y-%m-%d` `date +%H:%M:%S`] Found" \
+        echo -e "\e[1;33m[`date +%Y-%m-%d` `date +%H:%M:%S`] Found" \
             "${dnsRecords[recordIdx]} (Index: $recordIdx):\e[0m" \
             >> $logFileVerbose
     done
