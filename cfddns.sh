@@ -134,7 +134,6 @@ errorExplain[254]="Could not connect with CloudFlare API. Please re-run this scr
 
 ### Process script parameters
 if [ -z $1 ]; then
-    echo -e "\e[1;31mNo parameter(s) provided\e[0m\n"
     scriptHelp 1
 fi
 
@@ -164,7 +163,6 @@ while getopts ':f:r:i:46hx' PARAMS; do
             scriptExamples
             ;;
         ?)
-            echo -e "\e[1;31mInvalid parameter(s) provided\e[0m\n"
             scriptHelp 1
             ;;
     esac
