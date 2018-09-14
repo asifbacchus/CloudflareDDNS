@@ -129,6 +129,7 @@ ip6=0
 
 ## define error code explainations
 errorExplain[1]="Missing or invalid parameters on script invocation."
+errorExplain[2]="curl is required to access CloudFlare API.  Please install curl. (apt-get install curl on debian/ubuntu)."
 errorExplain[101]="Location of file with CloudFlare account details was NOT provided (-f parameter missing)."
 errorExplain[102]="CloudFlare account details file is empty or does not exist"
 errorExplain[103]="No DNS records to update were specified (-r parameter(s) missing)."
@@ -201,6 +202,13 @@ elif [ ! -s "$accountFile" ]; then
     quit 102
 elif [ -z ${dnsRecords} ]; then
     quit 103
+fi
+
+# Check if curl is installed
+command -v curl
+curlResult=$(echo "$?")
+if [ $curlResult -ne 0 ]; then
+    quit 2
 fi
 
 # Log operating mode
