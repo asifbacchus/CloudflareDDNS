@@ -132,10 +132,10 @@ errorExplain[201]="Could not detect this machine's IP address. Please re-run thi
 errorExplain[254]="Could not connect with CloudFlare API. Please re-run this script later."
 
 
-## Logging parameters -- default set to 'quiet' in same directory as this script
+## Logging parameters -- default set to 'quiet' (i.e. the logFile) in same 
+## directory as this script
 scriptPath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 logFile="$scriptPath/cfddns.log"
-logQuietFile="$logFile"
 unset logVerboseFile
 
 
@@ -144,7 +144,7 @@ if [ -z $1 ]; then
     scriptHelp 1
 fi
 
-while getopts ':f:r:i:46hxlvq' PARAMS; do
+while getopts ':f:r:i:46hxlv' PARAMS; do
     case "$PARAMS" in
         f)
             # path to file with CloudFlare account details
@@ -182,11 +182,6 @@ while getopts ':f:r:i:46hxlvq' PARAMS; do
         v)
             # Verbose logging mode
             logVerboseFile="$logFile"
-            unset logQuietFile
-        q)
-            # Quiet logging mode (default)
-            logQuietFile="$logFile"
-            unset logVerboseFile
         ?)
             scriptHelp 1
             ;;
