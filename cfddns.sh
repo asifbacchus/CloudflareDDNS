@@ -239,10 +239,9 @@ if [ -z "$ipAddress" ]; then
     if [ "$ipLookupResult" -ne 0 ]; then
         quit 201
     fi
-else
-    echo -e "\e[1;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Using IP address:" \
-        "$ipAddress" >> $logFile
 fi
+echo -e "\e[1;36m[`date +%Y-%m-%d` `date +%H:%M:%S`] Using IP address:" \
+    "$ipAddress" >> $logFile
 
 
 ## Check if desired record(s) exist at CloudFlare
