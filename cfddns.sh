@@ -205,7 +205,7 @@ elif [ -z ${dnsRecords} ]; then
 fi
 
 # Check if curl is installed
-command -v curl
+command -v curl >> /dev/null
 curlResult=$(echo "$?")
 if [ $curlResult -ne 0 ]; then
     quit 2
