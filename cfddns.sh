@@ -80,26 +80,27 @@ quit none
 function quit {
     if [ -z "$1" ]; then
         # exit cleanly
-        echo -e "\e[1;32m--[SUCCESS] Script completed --\e[0m"
+        echo -e "\e[1;32m--[SUCCESS] Script completed --\e[0m" >> $logFile
         exit 0
     elif [ "$1" = "none" ]; then
         if [ -z "$2" ]; then
             # exit cleanly
             exit 0
         else
-            # exit with error code but don't display it
+            # exit with error code but don't log/display it
             exit "$2"
         fi
     elif [ "$1" = "199" ]; then
         # list DNS entries that were not updated
         for failedName in "${failedDNS[@]}"; do
-            echo -e "\e[1;31m-- [ERROR] $failedName was NOT updated --\e[0m"
+            echo -e "\e[1;31m-- [ERROR] $failedName was NOT updated --\e[0m" \
+                >> $logFile
         done
         exit "$1"
     else
         # notify use that error has occurred and provide exit code
-        echo -e "\e[1;31m-- [ERROR] Script exited with code $1 --"
-        echo -e "\e[0;31m${errorExplain[$1]}\e[0m"
+        echo -e "\e[1;31m-- [ERROR] Script exited with code $1 --" >> $logFile
+        echo -e "\e[0;31m${errorExplain[$1]}\e[0m" >> $logFile
         exit "$1"
     fi
 }
@@ -144,7 +145,7 @@ if [ -z $1 ]; then
     scriptHelp 1
 fi
 
-while getopts ':f:r:i:46hxlv' PARAMS; do
+while getopts ':f:r:i:46hxl:v' PARAMS; do
     case "$PARAMS" in
         f)
             # path to file with CloudFlare account details
@@ -179,9 +180,11 @@ while getopts ':f:r:i:46hxlv' PARAMS; do
         l)
             # Path to write log file
             logFile="${OPTARG}"
+            ;;
         v)
             # Verbose logging mode
             logVerboseFile="$logFile"
+            ;;
         ?)
             scriptHelp 1
             ;;
@@ -234,7 +237,8 @@ fi
 
 
 ## Check if desired record(s) exist at CloudFlare
-echo -e "\e[0;36mPerforming CloudFlare lookup on specified DNS records...\e[0m"
+echo -e "\e[0;36mPerforming CloudFlare lookup on specified DNS" \
+    "records...\e[0m" >> $logVerboseFile
 # perform checks on A or AAAA records based on invocation options
 if [ $ip4 -eq 1 ]; then
     echo -e "\t(IP4: ${dnsRecords[*]})"
@@ -257,7 +261,7 @@ for recordIdx in "${!cfRecords[@]}"; do
     if [[ ${cfRecords[recordIdx]} == *"\"count\":0"* ]]; then
         # inform user that domain not found in CloudFlare DNS records
         echo -e "\e[0;31m***${dnsRecords[recordIdx]} not found in your" \
-            "CloudFlare DNS records***\e[0m"
+            "CloudFlare DNS records***\e[0m" >> $logVerboseFile
         # remove the entry from the dnsRecords array
         unset dnsRecords[$recordIdx]
         # remove the entry from the records array
@@ -276,8 +280,8 @@ if [ -z ${dnsRecords} ]; then
 else
     for recordIdx in "${!cfRecords[@]}"; do
         echo -e "\n\e[0;33mFound ${dnsRecords[recordIdx]}" \
-            "(Index: $recordIdx):\e[0m"
-        echo -e "${cfRecords[recordIdx]}"
+            "(Index: $recordIdx):\e[0m" >> $logVerboseFile
+        echo -e "${cfRecords[recordIdx]}" >> $logVerboseFile
     done
 fi
 
@@ -291,23 +295,29 @@ for recordIdx in "${!cfRecords[@]}"; do
     echo -e "\e[1;36mIndex $recordIdx: \e[0mFor record\e[1;33m" \
         "${dnsRecords[recordIdx]}\e[0m" \
         "with ID: \e[1;33m${recordID[recordIdx]}\e[0m" \
-        "the current IP is \e[1;35m ${currentIP[recordIdx]}\e[0m"
+        "the current IP is \e[1;35m ${currentIP[recordIdx]}" \
+        "\e[0m" >> $logVerboseFile
 done
 
 ## Check whether new IP matches old IP and update if they do not match
 for recordIdx in "${!currentIP[@]}"; do
     if [ ${currentIP[recordIdx]} = $ipAddress ]; then
-        echo -e "\e[0;32m${dnsRecords[recordIdx]} is up-to-date.\e[0m"
+        echo -e "\e[0;32m${dnsRecords[recordIdx]} is up-to-date.\e[0m" \
+            >> $logVerboseFile
     else
-        echo -e "\e[0;31m${dnsRecords[recordIdx]} needs updating...\e[0m"
+        echo -e "\e[0;31m${dnsRecords[recordIdx]} needs updating...\e[0m" \
+            >> $logVerboseFile
         if [ $ip4 -eq 1 ]; then
             # update record at CloudFlare with new IP
             update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records/${recordID[recordIdx]}" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json" --data "{\"id\":\"${cfDetails[2]}\",\"type\":\"A\",\"proxied\":false,\"name\":\"${dnsRecords[recordIdx]}\",\"content\":\"$ipAddress\"}")
             # check for success code from CloudFlare
             if [[ $update == *"\"success\":true"* ]]; then
-                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m]"
+                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m]" \
+                >> $logFile
             else
-                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m"
+                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m" \
+                    >> $logFile
+                echo -e "\e[0;39m$update" >> $logVerboseFile
                 failedDNS+=("${dnsRecords[recordIdx]}")
             fi
         elif [ $ip6 -eq 1 ]; then
@@ -315,9 +325,12 @@ for recordIdx in "${!currentIP[@]}"; do
             update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records/${recordID[recordIdx]}" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json" --data "{\"id\":\"${cfDetails[2]}\",\"type\":\"AAAA\",\"proxied\":false,\"name\":\"${dnsRecords[recordIdx]}\",\"content\":\"$ipAddress\"}")
             # check for success code from CloudFlare
             if [[ $update == *"\"success\":true"* ]]; then
-                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m"
+                echo -e "\e[1;32m${dnsRecords[recordIdx]} updated.\e[0m" \
+                    >> $logFile
             else
-                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m"
+                echo -e "\e[1;31m${dnsRecords[recordIdx]} update failed\e[0m" \
+                    >> $logFile
+                echo -e "\e[0;39m$update" >> $logVerboseFile
                 failedDNS+=("${dnsRecords[recordIdx]}")
             fi
         fi
