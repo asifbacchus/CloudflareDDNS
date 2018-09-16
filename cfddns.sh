@@ -141,7 +141,8 @@ errorExplain[254]="Could not connect with CloudFlare API. Please re-run this scr
 ## Logging parameters -- default set to scriptname.ext.log in same 
 ## directory as this script
 scriptPath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-logFile="$scriptPath/$(basename ${0}).log"
+scriptName="$(basename ${0})"
+logFile="$scriptPath/${scriptName%.*}.log"
 
 
 ### Process script parameters
