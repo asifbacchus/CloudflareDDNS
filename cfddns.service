@@ -1,10 +1,10 @@
-[unit]
+[Unit]
 Description=Run script to update CloudFlare DNS
 After=network.target
 
-[service]
+[Service]
 Type=oneshot
 ExecStart=/usr/local/bin/cfddns.sh
 
-[install]
+[Install]
 WantedBy=multi-user.target
