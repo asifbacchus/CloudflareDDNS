@@ -1,0 +1,9 @@
+[Unit]
+Description=Run CloudFlare DNS update service on timer
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target
