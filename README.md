@@ -1,4 +1,4 @@
-# CloudflareDDNS {ignore=true}
+# CloudflareDDNS
 
 Update your CloudFlare DNS records with your current (dynamic) IP address via
 systemd timers and a bash script.
@@ -7,23 +7,18 @@ systemd timers and a bash script.
 auto-update itself.  However, you MUST update the systemd service file
 *(cfddns.service)* *ExecStart* line manually as explained below.**
 
-## Contents {ignore=true}
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
-
-<!-- code_chunk_output -->
+## Contents
 
 * [cfddns&#46;sh](#cfddns46sh)
-		* [Installation:](#installation)
-		* [Usage:](#usage)
+  * [Installation:](#installation)
+  * [Usage:](#usage)
 * [cfddns.service](#cfddnsservice)
-		* [IP4 and/or IP6](#ip4-andor-ip6)
-		* [Examples](#examples)
+  * [IP4 and/or IP6](#ip4-andor-ip6)
+  * [Examples](#examples)
 * [cfddns.timer](#cfddnstimer)
-		* [Activation](#activation)
+  * [Activation](#activation)
 * [The log file](#the-log-file)
 * [Final thoughts](#final-thoughts)
-
-<!-- /code_chunk_output -->
 
 ## cfddns&#46;sh
 
@@ -71,9 +66,12 @@ details.  This file must contain 3 lines in the following order:
    You should be able to find this on the Overview page of your CloudFlare dashboard.
   
 Your completed file should look like (these are not real credentials):
-> johndoe<span>@example.com
-> e7882db52804aca6fab22780e055b97056466
-> 492af8aa69f8c44baf043342c74319fd
+
+```
+johndoe@example.com
+e7882db52804aca6fab22780e055b97056466
+492af8aa69f8c44baf043342c74319fd
+```
 
 Your global API-key is equivalent to your account password, so you should
 secure this file by changing the owner of the file to root
@@ -172,8 +170,7 @@ parameters.
    ```Ini
    [Service]
    Type=oneshot
-   ExecStart=/usr/local/bin/cfddns.sh -f /root/accountDetails.cloudflare
-   -r mail.example.com -l /var/log/cfddns.log
+   ExecStart=/usr/local/bin/cfddns.sh -f /root/accountDetails.cloudflare -r mail.example.com -l /var/log/cfddns.log
    ...
    ```
 
@@ -185,8 +182,7 @@ parameters.
    ```Ini
    [Service]
    Type=oneshot
-   ExecStart=/usr/local/bin/cfddns.sh -6 -f /home/johndoe/account.details
-   -r git.example.com -r mail.example.com
+   ExecStart=/usr/local/bin/cfddns.sh -6 -f /home/johndoe/account.details -r git.example.com -r mail.example.com
    ...
    ```
 
@@ -199,10 +195,8 @@ parameters.
    ```Ini
    [Service]
    Type=oneshot
-   ExecStart=/usr/local/bin/cfddns.sh -f /dir1/account.cf -r mail.example.com
-   -l /var/log/DDNS_IP4.log
-   ExecStart=/usr/local/bin/cfddns.sh -6 -f /dir2/cloudflare.details
-   -r mail.example.com -r git.example.com -l /var/log/DDNS_IP6.log
+   ExecStart=/usr/local/bin/cfddns.sh -f /dir1/account.cf -r mail.example.com -l /var/log/DDNS_IP4.log
+   ExecStart=/usr/local/bin/cfddns.sh -6 -f /dir2/cloudflare.details -r mail.example.com -r git.example.com -l /var/log/DDNS_IP6.log
    ...
    ```
 
