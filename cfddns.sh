@@ -126,6 +126,18 @@ ip4=1
 ip6=0
 
 
+### define script variables
+# timestamp
+stamp="${stamp}"
+# formatting
+normal="\e[0m"
+bold="\e[1m"
+default="\e[39m"
+err="\e[31m"
+info="\e[96m"
+lit="\e[93m"
+note="\e[35m"
+
 ## define error code explainations
 errorExplain[1]="Missing or invalid parameters on script invocation."
 errorExplain[2]="curl is required to access CloudFlare API.  Please install curl. (apt-get install curl on debian/ubuntu)."
@@ -142,7 +154,7 @@ errorExplain[254]="Could not connect with CloudFlare API. Please re-run this scr
 scriptPath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 scriptName="$(basename ${0})"
 logFile="$scriptPath/${scriptName%.*}.log"
-stamp="${stamp}"
+
 
 ### Process script parameters
 if [ -z $1 ]; then
