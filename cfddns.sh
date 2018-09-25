@@ -82,8 +82,7 @@ quit none
 function quit {
     if [ -z "$1" ]; then
         # exit cleanly
-        echo -e "\e[1;32m${stamp}" \
-        "--[SUCCESS] Script completed --\e[0m" >> "$logFile"
+        echo -e "\e[1;32m${stamp} -- Script completed --\e[0m" >> "$logFile"
         exit 0
     elif [ "$1" = "none" ]; then
         if [ -z "$2" ]; then
