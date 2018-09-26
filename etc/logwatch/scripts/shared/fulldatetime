@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+##########################################################################
+# $Id$
+##########################################################################
+
+###############################################################################
+## Filter dates in full-date-time international format
+## Format: '%Y-%m-%d %H:%M:%S'
+###############################################################################
+
+use Logwatch ':dates';
+
+my $Debug = $ENV{'LOGWATCH_DEBUG'} || 0;
+
+$SearchDate = TimeFilter('%Y-%m-%d %H:%M:%S');
+
+if ( $Debug > 5 ) {
+   print STDERR "DEBUG: Inside FullDateTime...\n";
+   print STDERR "DEBUG: Looking For: " . $SearchDate . "\n";
+}
+
+while (defined($ThisLine = <STDIN>)) {
+   if ($ThisLine =~ m/^$SearchDate /o) {
+      print $ThisLine;
+   }
+}
+
+# vi: shiftwidth=3 syntax=perl tabstop=3 et
+# Local Variables:
+# mode: perl
+# perl-indent-level: 3
+# indent-tabs-mode: nil
+# End:
