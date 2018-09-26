@@ -6,11 +6,16 @@
 ### Levels:
 ### Levels are defined in this script as 0-4, 5 & 5+
 ### Levels 0-4 (same): Basic information reporting
-###    Reports only critical information such as errors, update successes and ###    failures.
+###    Reports only critical information such as errors, update successes and
+###    failures.
 ### Level 5: Recommended information reporting level
-###    Adds informational messages such as the hostnames being updated and the ###    IP address being used for that update.
+###    Adds informational messages such as the hostnames being updated and the
+###    IP address being used for that update.
 ### Level 5+ (same): Verbose logging
-###    This will just reprint the entire log.  This should only be used when ###    checking the actual logfile is not possible or you prefer looking at it ###    via Logwatch for some reason.  Note: ANSI colouring is removed by this ###    script to faciliate Logwatch conversion to HTML.  Therefore, viewing
+###    This will just reprint the entire log.  This should only be used when
+###    checking the actual logfile is not possible or you prefer looking at it
+###    via Logwatch for some reason.  Note: ANSI colouring is removed by this
+###    script to faciliate Logwatch conversion to HTML.  Therefore, viewing
 ###    that actual log file is highly recommended instead of via this level of
 ###    reporting in Logwatch.
 
