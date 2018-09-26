@@ -133,6 +133,7 @@ stamp="${stamp}"
 normal="\e[0m"
 bold="\e[1m"
 default="\e[39m"
+ok="\e[32m"
 err="\e[31m"
 info="\e[96m"
 lit="\e[93m"
@@ -205,8 +206,8 @@ while getopts ':f:r:i:46hxl:' PARAMS; do
 done
 
 # Log beginning of script
-echo -e "\e[1;32m${stamp} -- Start CloudFlare" \
-    "DDNS script execution --\e[0m" >> "$logFile"
+echo -e "${bold}${note}${stamp} -- Start CloudFlare" \
+    "DDNS script execution --${normal}" >> "$logFile"
 
 # Check validity of parameters
 if [ -z "$accountFile" ] || [[ $accountFile == -* ]]; then
@@ -220,17 +221,17 @@ fi
 # Check if curl is installed
 command -v curl >> /dev/null
 curlResult=$(echo "$?")
-if [ $curlResult -ne 0 ]; then
+if [ "$curlResult" -ne 0 ]; then
     quit 2
 fi
 
 # Log operating mode
 if [ $ip4 -eq 1 ]; then
-    echo -e "\e[1;36m${stamp} Script running in" \
-        "IP4 mode\e[0m" >> "$logFile"
+    echo -e "${info}${stamp} Script running in" \
+        "IP4 mode${normal}" >> "$logFile"
 elif [ $ip6 -eq 1 ]; then
-    echo -e "\e[1;36m ${stamp} Script running in" \
-        "IP6 mode\e[0m" >> "$logFile"
+    echo -e "${info}${stamp} Script running in" \
+        "IP6 mode${normal}" >> "$logFile"
 fi
 
 
@@ -239,8 +240,8 @@ mapfile -t cfDetails < "$accountFile"
 
 ## Get current IP address, if not provided in parameters
 if [ -z "$ipAddress" ]; then
-    echo -e "\e[1;36m${stamp} No IP address for" \
-        "update provided.  Detecting this machine's IP address..." \
+    echo -e "${info}${stamp} No IP address for" \
+        "update provided.  Detecting this machine's IP address...${normal}" \
         >> "$logFile"
     if [ $ip4 -eq 1 ]; then
         ipAddress=$(curl -s http://ipv4.icanhazip.com)
@@ -253,22 +254,20 @@ if [ -z "$ipAddress" ]; then
         quit 201
     fi
 fi
-echo -e "\e[1;36m${stamp} Using IP address:" \
+echo -e "${info}${stamp} [INFO] Using IP address:" \
     "$ipAddress" >> "$logFile"
 
 
 ## Check if desired record(s) exist at CloudFlare
-echo -e "\e[0m${stamp} Performing CloudFlare" \
-    "lookup on specified DNS records...\e[0m" >> "$logFile"
 # perform checks on A or AAAA records based on invocation options
 if [ $ip4 -eq 1 ]; then
-    echo -e "${stamp} (IP4: ${dnsRecords[*]})" \
+    echo -e "${normal}${stamp} (IP4 lookup: ${dnsRecords[*]})" \
         >> "$logFile"
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
     done
 elif [ $ip6 -eq 1 ]; then
-    echo -e "${stamp} (IP6: ${dnsRecords[*]})" \
+    echo -e "${normal}${stamp} (IP6 lookup: ${dnsRecords[*]})" \
         >> "$logFile"
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=AAAA" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
@@ -283,9 +282,9 @@ fi
 for recordIdx in "${!cfRecords[@]}"; do
     if [[ ${cfRecords[recordIdx]} == *"\"count\":0"* ]]; then
         # inform user that domain not found in CloudFlare DNS records
-        echo -e "\e[0;31m${stamp} ***" \
+        echo -e "${err}${stamp} -- [INFO]" \
             "${dnsRecords[recordIdx]} not found in your" \
-            "CloudFlare DNS records***\e[0m" >> "$logFile"
+            "CloudFlare DNS records --${normal}" >> "$logFile"
         # remove the entry from the dnsRecords array
         unset dnsRecords[$recordIdx]
         # remove the entry from the records array
@@ -303,8 +302,8 @@ if [ -z ${dnsRecords} ]; then
     quit 104
 else
     for recordIdx in "${!cfRecords[@]}"; do
-        echo -e "\e[1;39m${stamp} Found" \
-            "${dnsRecords[recordIdx]} (Index: $recordIdx):\e[0m" \
+        echo -e "${normal}${stamp} Found" \
+            "${dnsRecords[recordIdx]} (Index: $recordIdx)" \
             >> "$logFile"
     done
 fi
@@ -316,22 +315,22 @@ for recordIdx in "${!cfRecords[@]}"; do
         grep -Po '(?<="content":")[^"]*'))
     recordID+=($(echo "${cfRecords[recordIdx]}" | \
         grep -Po '(?<="id":")[^"]*'))
-    echo -e "\e[0m${stamp} Index $recordIdx:" \
-        "For record ${dnsRecords[recordIdx]}" \
+    echo -e "${normal}${stamp} Index $recordIdx:" \
+        "For record ${lit}${dnsRecords[recordIdx]}${normal}" \
         "with ID: ${recordID[recordIdx]}" \
-        "the current IP is \e[1;35m ${currentIP[recordIdx]}" \
-        "\e[0m" >> "$logFile"
+        "the current IP is ${lit}${currentIP[recordIdx]}" \
+        "${normal}" >> "$logFile"
 done
 
 ## Check whether new IP matches old IP and update if they do not match
 for recordIdx in "${!currentIP[@]}"; do
     if [ ${currentIP[recordIdx]} = $ipAddress ]; then
-        echo -e "\e[1;32m${stamp}" \
-        "${dnsRecords[recordIdx]} is up-to-date.\e[0m" \
+        echo -e "${bold}${ok}${stamp} -- [STATUS]" \
+        "${dnsRecords[recordIdx]} is up-to-date.${normal}" \
             >> "$logFile"
     else
-        echo -e "\e[0;31m${stamp}" \
-        "${dnsRecords[recordIdx]} needs updating...\e[0m" \
+        echo -e "${lit}${stamp} -- [STATUS]" \
+        "${dnsRecords[recordIdx]} needs updating...${normal}" \
             >> "$logFile"
         if [ $ip4 -eq 1 ]; then
             # update record at CloudFlare with new IP
@@ -342,12 +341,9 @@ for recordIdx in "${!currentIP[@]}"; do
         fi
         # check for success code from CloudFlare
         if [[ $update == *"\"success\":true"* ]]; then
-            echo -e "\e[1;32m${stamp}" \
-                "${dnsRecords[recordIdx]} updated.\e[0m" >> "$logFile"
+            echo -e "${bold}${ok}${stamp} -- [SUCCESS]" \
+                "${dnsRecords[recordIdx]} updated.${normal}" >> "$logFile"
         else
-            echo -e "\e[1;31m${stamp}" \
-                "${dnsRecords[recordIdx]} update failed\e[0m" >> "$logFile"
-                echo -e "\e[0;39m$update\e[0m" >> "$logFile"
             failedDNS+=("${dnsRecords[recordIdx]}")
         fi        
     fi
