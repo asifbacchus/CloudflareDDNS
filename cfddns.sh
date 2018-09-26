@@ -128,7 +128,7 @@ ip6=0
 
 ### define script variables
 # timestamp
-stamp="${stamp}"
+stamp="[`date +%Y-%m-%d` `date +%H:%M:%S`]"
 # formatting
 normal="\e[0m"
 bold="\e[1m"
