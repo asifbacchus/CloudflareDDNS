@@ -261,13 +261,13 @@ echo -e "${info}${stamp} [INFO] Using IP address:" \
 ## Check if desired record(s) exist at CloudFlare
 # perform checks on A or AAAA records based on invocation options
 if [ $ip4 -eq 1 ]; then
-    echo -e "${normal}${stamp}[INFO] Updating A: ${dnsRecords[*]}" \
+    echo -e "${normal}${stamp}[INFO] Updating A records: ${dnsRecords[*]}" \
         >> "$logFile"
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=A" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
     done
 elif [ $ip6 -eq 1 ]; then
-    echo -e "${normal}${stamp}[INFO] Updating AAAA: ${dnsRecords[*]})" \
+    echo -e "${normal}${stamp}[INFO] Updating AAAA records: ${dnsRecords[*]})" \
         >> "$logFile"
     for cfLookup in "${dnsRecords[@]}"; do
     cfRecords+=("$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfDetails[2]}/dns_records?name=$cfLookup&type=AAAA" -H "X-Auth-Email: ${cfDetails[0]}" -H "X-Auth-Key: ${cfDetails[1]}" -H "Content-Type: application/json")")
