@@ -5,7 +5,7 @@
 
 function scriptHelp {
 echo -e "\e[1;39mUsage:"
-echo -e "\e[1;36m$(basename ${0})" \
+echo -e "\e[1;36m$(basename "${0}")" \
     "\e[1;35m-f /path/to/account/details.file"
 echo -e "\t\e[1;33m-r record.to.update [-r another.record.to.update -r ...]"
 echo -e "\t\e[0;92m[optional parameters]\e[0m\n"
@@ -37,40 +37,40 @@ echo -e "-x\tDisplay script examples"
 echo -e "-l\tLocation for log file output"
 echo -e "\tDefault: scriptname.log in same directory as this script"
 echo -e "\n\e[1;39mExamples:"
-echo -e "\e[0;39mRun \e[1;36m$(basename ${0}) \e[1;92m-x\e[0m\n"
+echo -e "\e[0;39mRun \e[1;36m$(basename "${0}") \e[1;92m-x\e[0m\n"
 echo -e "\n"
 
 # exit with any error code used to call this help screen
-quit none $1
+quit none "$1"
 }
 
 
 function scriptExamples {
-echo -e "\n\e[1;39m$(basename ${0}) Examples:\e[0m"
+echo -e "\n\e[1;39m$(basename "${0}") Examples:\e[0m"
 echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
 echo -e "file in /home/janedoe directory. Update server.mydomain.com A record"
 echo -e "with this machine's auto-detected IP4 address."
-echo -e "\t\e[1;36m$(basename ${0})" \
+echo -e "\t\e[1;36m$(basename "${0}")" \
     "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
 echo -e "\t\e[1;33m-r server.mydomain.com\e[0m"
 echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
 echo -e "file in /home/janedoe directory. Update server.mydomain.com AND"
 echo -e "server2.mydomain.com A records with this machine's auto-detected IP6"
 echo -e "address."
-echo -e "\t\e[1;36m$(basename ${0})" \
+echo -e "\t\e[1;36m$(basename "${0}")" \
     "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
 echo -e "\t\e[1;33m-r server.mydomain.com" \
     "-r server2.mydomain.com \e[1;92m-6\e[0m"
 echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
 echo -e "file in /home/janedoe directory. Update server.mydomain.com A record"
 echo -e "using IP4 address 1.2.3.4."
-echo -e "\t\e[1;36m$(basename ${0})" \
+echo -e "\t\e[1;36m$(basename "${0}")" \
     "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
 echo -e "\t\e[1;33m-r server.mydomain.com \e[1;92m-i 1.2.3.4\e[0m"
 echo -e "\n\e[1;39mExample: \e[0mUse details from myCloudFlareDetails.info"
 echo -e "file in /home/janedoe directory. Update server3.mydomain.com AND"
 echo -e "server7.mydomain.com AAAA records using IP6 address FE80::286A:FF91."
-echo -e "\t\e[1;36m$(basename ${0})" \
+echo -e "\t\e[1;36m$(basename "${0}")" \
     "\e[1;35m-f /home/janedoe/myCloudFlareDetails.info"
 echo -e "\t\e[1;33m-r server.mydomain.com" \
     "\e[1;33m-r server2.mydomain.com \e[1;92m-i FE80::286A:FF91\e[0m"
@@ -132,7 +132,6 @@ stamp="[`date +%Y-%m-%d` `date +%H:%M:%S`]"
 # formatting
 normal="\e[0m"
 bold="\e[1m"
-default="\e[39m"
 ok="\e[32m"
 err="\e[31m"
 info="\e[96m"
@@ -154,12 +153,12 @@ errorExplain[254]="Could not connect with CloudFlare API. Please re-run this scr
 ## Logging parameters -- default set to scriptname.ext.log in same 
 ## directory as this script
 scriptPath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-scriptName="$(basename ${0})"
+scriptName="$(basename "${0}")"
 logFile="$scriptPath/${scriptName%.*}.log"
 
 
 ### Process script parameters
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
     scriptHelp 1
 fi
 
@@ -171,7 +170,7 @@ while getopts ':f:r:i:46hxl:' PARAMS; do
             ;;
         r)
             # DNS records to update
-            dnsRecords+=($OPTARG)
+            dnsRecords+=("$OPTARG")
             ;;
         i)
             # IP address to use -- NOT parsed for correctness
@@ -214,13 +213,13 @@ if [ -z "$accountFile" ] || [[ $accountFile == -* ]]; then
     quit 101
 elif [ ! -s "$accountFile" ]; then
     quit 102
-elif [ -z ${dnsRecords} ]; then
+elif [ -z "${dnsRecords}" ]; then
     quit 103
 fi
 
 # Check if curl is installed
 command -v curl >> /dev/null
-curlResult=$(echo "$?")
+curlResult="$?"
 if [ "$curlResult" -ne 0 ]; then
     quit 2
 fi
@@ -249,7 +248,7 @@ if [ -z "$ipAddress" ]; then
         ipAddress=$(curl -s http://ipv6.icanhazip.com)
     fi
     # check if curl reported any errors
-    ipLookupResult=$(echo "$?")
+    ipLookupResult="$?"
     if [ "$ipLookupResult" -ne 0 ]; then
         quit 201
     fi
@@ -274,7 +273,7 @@ elif [ $ip6 -eq 1 ]; then
     done
 fi
 # check for curl errors
-cfLookupResult=$(echo "$?")
+cfLookupResult="$?"
 if [ "$cfLookupResult" -ne 0 ]; then
     quit 254
 fi
@@ -286,9 +285,9 @@ for recordIdx in "${!cfRecords[@]}"; do
             "${dnsRecords[recordIdx]} not found in your" \
             "CloudFlare DNS records --${normal}" >> "$logFile"
         # remove the entry from the dnsRecords array
-        unset dnsRecords[$recordIdx]
+        unset "dnsRecords[$recordIdx]"
         # remove the entry from the records array
-        unset cfRecords[$recordIdx]
+        unset "cfRecords[$recordIdx]"
     fi
 done
 # contract the dnsRecords and cfRecords arrays to re-order them after any
@@ -298,7 +297,7 @@ cfRecords=("${cfRecords[@]}")
 
 # after trimming errant records, it's possible dnsRecords array is empty
 # check for this condition and exit (nothing to do), otherwise list arrays
-if [ -z ${dnsRecords} ]; then
+if [ -z "${dnsRecords}" ]; then
     quit 104
 else
     for recordIdx in "${!cfRecords[@]}"; do
@@ -324,7 +323,7 @@ done
 
 ## Check whether new IP matches old IP and update if they do not match
 for recordIdx in "${!currentIP[@]}"; do
-    if [ ${currentIP[recordIdx]} = $ipAddress ]; then
+    if [ "${currentIP[recordIdx]}" = "$ipAddress" ]; then
         echo -e "${bold}${ok}${stamp} -- [STATUS]" \
         "${dnsRecords[recordIdx]} is up-to-date.${normal}" \
             >> "$logFile"
