@@ -82,7 +82,7 @@ quit none
 function quit {
     if [ -z "$1" ]; then
         # exit cleanly
-        echo -e "${bold}${note}${stamp} -- Script completed --\${normal}" \
+        echo -e "${bold}${note}${stamp} -- Script completed --${normal}" \
             >> "$logFile"
         exit 0
     elif [ "$1" = "none" ]; then
@@ -329,7 +329,7 @@ for recordIdx in "${!currentIP[@]}"; do
         "${dnsRecords[recordIdx]} is up-to-date.${normal}" \
             >> "$logFile"
     else
-        echo -e "${lit}${stamp} -- [STATUS]" \
+        echo -e "${info}${stamp} -- [STATUS]" \
         "${dnsRecords[recordIdx]} needs updating...${normal}" \
             >> "$logFile"
         if [ $ip4 -eq 1 ]; then
