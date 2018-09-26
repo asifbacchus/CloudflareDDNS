@@ -82,7 +82,8 @@ quit none
 function quit {
     if [ -z "$1" ]; then
         # exit cleanly
-        echo -e "\e[1;32m${stamp} -- Script completed --\e[0m" >> "$logFile"
+        echo -e "${bold}${note}${stamp} -- Script completed --\${normal}" \
+            >> "$logFile"
         exit 0
     elif [ "$1" = "none" ]; then
         if [ -z "$2" ]; then
@@ -95,15 +96,14 @@ function quit {
     elif [ "$1" = "199" ]; then
         # list DNS entries that were not updated
         for failedName in "${failedDNS[@]}"; do
-            echo -e "\e[1;31m${stamp}" \
-            "-- [ERROR] $failedName was NOT updated --\e[0m" >> "$logFile"
+            echo -e "${bold}${err}${stamp}" \
+            "-- [ERROR] $failedName was NOT updated --${normal}" >> "$logFile"
         done
         exit "$1"
     else
         # notify use that error has occurred and provide exit code
-        echo -e "\e[1;31m${stamp}" \
-        "-- [ERROR] Script exited with code $1 --" >> "$logFile"
-        echo -e "\e[0;31m${errorExplain[$1]}\e[0m" >> "$logFile"
+        echo -e "${bold}${err}${stamp}" \
+        "-- [ERROR] ${errorExplain[$1]} (code: $1) --${normal}" >> "$logFile"
         exit "$1"
     fi
 }
@@ -137,6 +137,7 @@ err="\e[31m"
 info="\e[96m"
 lit="\e[93m"
 note="\e[35m"
+
 
 ## define error code explainations
 errorExplain[1]="Missing or invalid parameters on script invocation."
