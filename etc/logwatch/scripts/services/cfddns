@@ -69,10 +69,7 @@ elsif ($detailLevel >= 1 && $detailLevel <= 4) {
         if ($ThisLine =~ /\-- \[ERROR\] /) {
             print $ThisLine;
         }
-        elsif ($ThisLine =~ /up-to-date./) {
-            print $ThisLine;
-        }
-        elsif ($ThisLine =~ /needs updating.../) {
+        elsif ($ThisLine =~ /\-- \[STATUS\] /) {
             print $ThisLine;
         }
         elsif ($ThisLine =~ /\-- \[SUCCESS\] /) {
@@ -88,10 +85,7 @@ elsif ($detailLevel == 5) {
         if ($ThisLine =~ /\-- \[ERROR\] /) {
             print $ThisLine;
         }
-        elsif ($ThisLine =~ /up-to-date./) {
-            print $ThisLine;
-        }
-        elsif ($ThisLine =~ /needs updating.../) {
+        elsif ($ThisLine =~ /\-- \[STATUS\] /) {
             print $ThisLine;
         }
         elsif ($ThisLine =~ /\-- \[SUCCESS\] /) {
