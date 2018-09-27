@@ -62,7 +62,56 @@ if ($detailLevel == 0) {
         print "$key: $reportHash{$key}\n";
     }
 }
-
+### Levels 1-4 provide the actual error, status and success messages instead of
+### a summary count
+elsif ($detailLevel >= 1 && $detailLevel <= 4) {
+    while (defined(my $ThisLine = <STDIN>)) {
+        if ($ThisLine =~ /\-- \[ERROR\] /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /up-to-date./) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /needs updating.../) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /\-- \[SUCCESS\] /) {
+            print $ThisLine;
+        }
+    }
+}
+### Level 5 is similiar to levels 1-4 except it also reports informational
+### messages such as the current working IP address and hostnames being
+### checked.  This is useful when verifying the cfddns.sh script's operation.
+elsif ($detailLevel == 5) {
+    while (defined(my $ThisLine = <STDIN>)) {
+        if ($ThisLine =~ /\-- \[ERROR\] /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /up-to-date./) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /needs updating.../) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /\-- \[SUCCESS\] /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /\-- \[INFO\] /) {
+            print $ThisLine;
+        }
+    }
+}
+### Any level above 5 will echo the entire log including the debugging notes
+### within the script meant for troubleshooting.  Using this level of detail
+### should only be done if you cannot view the actual log file directly for
+### whatever reason.  The actual log file is colour-coded for easier debugging
+### which is also the only reason to have Logwatch set to report at this detail.
+elsif ($detailLevel > 5) {
+    while (defined(my $ThisLine = <STDIN>)) {
+        print $ThisLine;
+    }
+}
 
 
 
