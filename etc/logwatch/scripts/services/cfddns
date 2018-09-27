@@ -27,7 +27,7 @@ my $key;
 
 ### Minimal detail level: provide summary data only
 if ($detailLevel == 0) {
-    ### Process logfile and summarize message types
+    ### process logfile and summarize message types
     while (defined(my $ThisLine = <STDIN>)) {
         if ($ThisLine =~ /\-- \[ERROR\] /) {
             $summaryErr++;
@@ -43,7 +43,7 @@ if ($detailLevel == 0) {
         }
     }
 
-    ### Fill hashtable with headings and summary counts
+    ### fill hash table with headings and summary counts
     if ($summaryStatusNeedsUpdating > 0) {
         $reportHash{"Entries needing updates"} = $summaryStatusNeedsUpdating;
     }
@@ -57,7 +57,7 @@ if ($detailLevel == 0) {
         $reportHash{"Errors encountered"} = $summaryErr;
     }
 
-    ### Print hash table
+    ### print hash table
     foreach $key (sort keys %reportHash) {
         print "$key: $reportHash{$key}\n";
     }
@@ -105,8 +105,7 @@ elsif ($detailLevel == 5) {
 ### Any level above 5 will echo the entire log including the debugging notes
 ### within the script meant for troubleshooting.  Using this level of detail
 ### should only be done if you cannot view the actual log file directly for
-### whatever reason.  The actual log file is colour-coded for easier debugging
-### which is also the only reason to have Logwatch set to report at this detail.
+### whatever reason.  The actual log file is colour-coded for easier debugging.
 elsif ($detailLevel > 5) {
     while (defined(my $ThisLine = <STDIN>)) {
         print $ThisLine;
