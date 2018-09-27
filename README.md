@@ -9,16 +9,18 @@ auto-update itself.  However, you MUST update the systemd service file
 
 ## Contents
 
-* [cfddns&#46;sh](#cfddns46sh)
-  * [Installation:](#installation)
-  * [Usage:](#usage)
-* [cfddns.service](#cfddnsservice)
-  * [IP4 and/or IP6](#ip4-andor-ip6)
-  * [Examples](#examples)
-* [cfddns.timer](#cfddnstimer)
-  * [Activation](#activation)
-* [The log file](#the-log-file)
-* [Final thoughts](#final-thoughts)
+- [CloudflareDDNS](#cloudflareddns)
+  - [Contents](#contents)
+  - [cfddns&#46;sh](#cfddns46sh)
+      - [Installation:](#installation)
+      - [Usage:](#usage)
+  - [cfddns.service](#cfddnsservice)
+      - [IP4 and/or IP6](#ip4-andor-ip6)
+      - [Examples](#examples)
+  - [cfddns.timer](#cfddnstimer)
+      - [Activation](#activation)
+  - [The log file](#the-log-file)
+  - [Final thoughts](#final-thoughts)
 
 ## cfddns&#46;sh
 
@@ -264,6 +266,10 @@ your log-watch system:
 * The script always starts a new set of log entries with **-- Start CloudFlare
   DDNS script execution --**
 * All log file entries start with a time-stamp in **[square brackets]**
+
+If you are using the Logwatch package to monitor your system, see the README in
+the /etc/logwatch folder for details about the pre-configured service files
+already done for you :-)
 
 ## Final thoughts
 I'm by no means an expert in BASH scripting and I only program/script as a hobby
