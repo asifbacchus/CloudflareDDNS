@@ -5,14 +5,16 @@
 ##########################################################################
 
 ###############################################################################
-## Filter dates in full-date-time international format
-## Format: '%Y-%m-%d %H:%M:%S'
+## Filter dates in full-date-time international format, surrounded by square
+## brackets located anywhere on a given line
+## Format: '[%Y-%m-%d %H:%M:%S]'
 ###############################################################################
 
 use Logwatch ':dates';
 
 my $Debug = $ENV{'LOGWATCH_DEBUG'} || 0;
 
+### Specify the format of the date/time stamp itself
 $SearchDate = TimeFilter('%Y-%m-%d %H:%M:%S');
 
 if ( $Debug > 5 ) {
@@ -21,7 +23,8 @@ if ( $Debug > 5 ) {
 }
 
 while (defined($ThisLine = <STDIN>)) {
-   if ($ThisLine =~ m/^$SearchDate /o) {
+   ### specify the regex that defines how to find 'SearchDate'
+   if ($ThisLine =~ m/\[$SearchDate\] /o) {
       print $ThisLine;
    }
 }
