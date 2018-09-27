@@ -43,9 +43,10 @@ else in your path so it's easy to run.
    ```
 
 #### Usage:
+
 If you run the script with no parameters, it will display the help screen.  The
 script accepts several parameters with 2 being required.  The parameters are
-summarized here.  You can access the help screen and example usage screens by 
+summarized here.  You can access the help screen and example usage screens by
 running:
 
 ```Bash
@@ -54,17 +55,17 @@ cfddns.sh -x   # show script usage examples
 ```
 
 **-f: full path and filename containing account details (REQUIRED)**
-This is the full path to a plain-text file containing your CloudFlare account 
+This is the full path to a plain-text file containing your CloudFlare account
 details.  This file must contain 3 lines in the following order:
 
-* authorized email address
+- authorized email address
    This is an email address that is permitted to login to your CloudFlare account.
-* global api-key
+- global api-key
    You can get your Global API-key by going to your CloudFlare dashboard,
    clicking on your profile picture in the upper-right and opening your profile.
    Scroll down to to the API Keys section.  Click on the 'View' button next to
    Global API Key.
-* zone identifier
+- zone identifier
    You should be able to find this on the Overview page of your CloudFlare dashboard.
   
 Your completed file should look like (these are not real credentials):
@@ -142,8 +143,9 @@ This is the best way to learn how this script works.  Several examples are
 provided
 
 ## cfddns.service
+
 This file **must** be copied to your */etc/systemd/system* directory (or
-equivalent directory if you're not running debian/ubuntu).  If you change the 
+equivalent directory if you're not running debian/ubuntu).  If you change the
 name of the cfddns&#46;sh file, you must update the filename in the *ExecStart*
 line as shown below:
 
@@ -156,6 +158,7 @@ ExecStart=/full/path/to/your/renamed.file -parameter1 -parameter2 -parameter...
 ````
 
 #### IP4 and/or IP6
+
 The cfddns.service file includes two *ExecStart* lines, one without a specified
 IP-protocol parameter (default IP4) and the other with the -6 (IP6) parameter.
 The service will run the cfddns&#46;sh script in default (IP4) mode with specified
@@ -165,6 +168,7 @@ parameters.
 *Note: The parameters *can be different* in each case.*
 
 #### Examples
+
 1. **Only update A records**
   Update *mail<span>.example.com* A record with the current IP of this machine and log
   results to */var/log/cfddns.log*.
@@ -203,6 +207,7 @@ parameters.
    ```
 
 ## cfddns.timer
+
 This is the timer file that tells your system how often to call the
 cfddns.service file which runs the cfddns&#46;sh script.  By default, the timer is
 set for 5 minutes after the system boots up (to allow for other processes to
@@ -227,6 +232,7 @@ cfddns.service again.  I recommend setting OnUnitActiveSec to a low value (like
 minutes) after everything is working.
 
 #### Activation
+
 You can start the timer system immediately via systemctl
 
 ```Bash
@@ -249,6 +255,7 @@ It is NOT necessary to enable/start the *cfddns.service*, only the timer needs
 to be active.
 
 ## The log file
+
 The script logs every major action it takes and provides details on any errors
 it encounters in the log file (see the above section for details on log file
 location and name).  If errors are encountered, they are colour coded red and
@@ -260,20 +267,21 @@ have to review this log as part of your daily routine.  To make that easier, the
 following conventions are observed in the log file and can be used to program
 your log-watch system:
 
-* Errors always appear as **-- [ERROR] text and error code here --**
-* Errors are followed by an explanation of the specific error code on a new line
-* A clean exit appears as **-- [SUCCESS] some text here --**
-* The script always starts a new set of log entries with **-- Start CloudFlare
+- Errors always appear as **-- [ERROR] text and error code here --**
+- Errors are followed by an explanation of the specific error code on a new line
+- A clean exit appears as **-- [SUCCESS] some text here --**
+- The script always starts a new set of log entries with **-- Start CloudFlare
   DDNS script execution --**
-* All log file entries start with a time-stamp in **[square brackets]**
+- All log file entries start with a time-stamp in **[square brackets]**
 
 If you are using the Logwatch package to monitor your system, see the README in
 the /etc/logwatch folder for details about the pre-configured service files
 already done for you :-)
 
 ## Final thoughts
+
 I'm by no means an expert in BASH scripting and I only program/script as a hobby
-when I find stuff that irritates me and no other good solutions seem easily 
+when I find stuff that irritates me and no other good solutions seem easily
 available.  So, by all means, please comment, provide feedback and suggestions
 to make this script better!  Thanks, I hope this helps someone else out!
 
