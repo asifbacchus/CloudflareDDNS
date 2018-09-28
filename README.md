@@ -10,19 +10,21 @@ auto-update itself.  However, you MUST update the systemd service file
 ## Contents <!-- omit in toc -->
 
 - [cfddns&#46;sh](#cfddns46sh)
-    - [Installation:](#installation)
-    - [Usage:](#usage)
+        - [Installation:](#installation)
+        - [Usage:](#usage)
 - [cfddns.service](#cfddnsservice)
-    - [IP4 and/or IP6](#ip4-andor-ip6)
-    - [Examples](#examples)
+        - [IP4 and/or IP6](#ip4-andor-ip6)
+                - [Examples](#examples)
 - [cfddns.timer](#cfddnstimer)
-    - [Activation](#activation)
+        - [Activation](#activation)
 - [The log file](#the-log-file)
+        - [Using Logwatch to monitor this script](#using-logwatch-to-monitor-this-script)
+        - [Using Logrotate to control log file size](#using-logrotate-to-control-log-file-size)
 - [Final thoughts](#final-thoughts)
 
 ## cfddns&#46;sh
 
-#### Installation:
+### Installation:
 
 I recommend putting this script in your */usr/local/bin* directory or somewhere
 else in your path so it's easy to run.
@@ -40,7 +42,7 @@ else in your path so it's easy to run.
    sudo chmod +x /usr/local/bin/cfddns.sh
    ```
 
-#### Usage:
+### Usage:
 
 If you run the script with no parameters, it will display the help screen.  The
 script accepts several parameters with 2 being required.  The parameters are
@@ -155,7 +157,7 @@ ExecStart=/full/path/to/your/renamed.file -parameter1 -parameter2 -parameter...
 ...
 ````
 
-#### IP4 and/or IP6
+### IP4 and/or IP6
 
 The cfddns.service file includes two *ExecStart* lines, one without a specified
 IP-protocol parameter (default IP4) and the other with the -6 (IP6) parameter.
@@ -229,7 +231,7 @@ cfddns.service again.  I recommend setting OnUnitActiveSec to a low value (like
 2 minutes) for testing then setting it to a more reasonable time (like 15
 minutes) after everything is working.
 
-#### Activation
+### Activation
 
 You can start the timer system immediately via systemctl
 
@@ -272,9 +274,24 @@ your log-watch system:
   DDNS script execution --**
 - All log file entries start with a time-stamp in **[square brackets]**
 
-If you are using the Logwatch package to monitor your system, see the README in
-the /etc/logwatch folder for details about the pre-configured service files
+### Using Logwatch to monitor this script
+
+If you are using the Logwatch package to monitor your system, **see the README
+in the /etc/logwatch folder** for details about the pre-configured service files
 already done for you :-)
+
+### Using Logrotate to control log file size
+
+Logrotate is pre-installed on standard Debian/Ubuntu distributions and is a great
+way to automatically rotate your log files and control how many old logs you
+keep on your system so they don't accumulate and eat up your disk space.
+
+I've included a sample configuration file you can copy to your
+*/etc/logrotate.d/* folder.  This file is set up to rotate your logs once a
+week, keep 3 weeks worth of history (compressed) and delete all logs older than
+that.  The configuration file is located in this git archive at
+*/etc/logrotate.d/cfddns* and is fully commented to help you customize it to
+suit your needs.
 
 ## Final thoughts
 
@@ -283,5 +300,6 @@ when I find stuff that irritates me and no other good solutions seem easily
 available.  So, by all means, please comment, provide feedback and suggestions
 to make this script better!  Thanks, I hope this helps someone else out!
 
-Please check out my blog at [https://mytechiethoughts.com](https://mytechiethoughts.com) where I tackle
+Please check out my blog at
+[https://mytechiethoughts.com](https://mytechiethoughts.com) where I tackle
 problems like this all the time and find free/cheap solutions to tech problems.
