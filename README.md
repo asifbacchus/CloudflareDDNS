@@ -1,4 +1,4 @@
-# CloudflareDDNS
+# CloudflareDDNS <!-- omit in toc -->
 
 Update your CloudFlare DNS records with your current (dynamic) IP address via
 systemd timers and a bash script.
@@ -7,20 +7,18 @@ systemd timers and a bash script.
 auto-update itself.  However, you MUST update the systemd service file
 *(cfddns.service)* *ExecStart* line manually as explained below.**
 
-## Contents
+## Contents <!-- omit in toc -->
 
-- [CloudflareDDNS](#cloudflareddns)
-  - [Contents](#contents)
-  - [cfddns&#46;sh](#cfddns46sh)
-      - [Installation:](#installation)
-      - [Usage:](#usage)
-  - [cfddns.service](#cfddnsservice)
-      - [IP4 and/or IP6](#ip4-andor-ip6)
-      - [Examples](#examples)
-  - [cfddns.timer](#cfddnstimer)
-      - [Activation](#activation)
-  - [The log file](#the-log-file)
-  - [Final thoughts](#final-thoughts)
+- [cfddns&#46;sh](#cfddns46sh)
+    - [Installation:](#installation)
+    - [Usage:](#usage)
+- [cfddns.service](#cfddnsservice)
+    - [IP4 and/or IP6](#ip4-andor-ip6)
+    - [Examples](#examples)
+- [cfddns.timer](#cfddnstimer)
+    - [Activation](#activation)
+- [The log file](#the-log-file)
+- [Final thoughts](#final-thoughts)
 
 ## cfddns&#46;sh
 
