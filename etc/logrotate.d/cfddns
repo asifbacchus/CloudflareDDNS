@@ -1,0 +1,15 @@
+### Rotate cfddns log file
+
+# location of log file (-l parameter of script file)
+/path/to/cfddns.log {
+    
+    # rotate log file weekly -- you could also use 'daily', 'monthly' or
+    # specify a size using 'size 100k', for example
+    weekly
+    
+    # keep 3 weeks of old logs (3 files) and delete older ones
+    rotate 3
+    
+    # compress old log files using gzip (default)
+    compress
+}
