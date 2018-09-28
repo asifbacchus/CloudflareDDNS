@@ -6,6 +6,25 @@ group file, service and script have to be created for Logwatch to generate
 reports.  The correct (general) directory structure has been created in this git
 archive already.  Below are the details of each file.
 
+## Contents
+
+- [Using Logwatch to monitor Cloudflare DDNS updater script](#using-logwatch-to-monitor-cloudflare-ddns-updater-script)
+    - [Contents](#contents)
+    - [LogFile Group file (/etc/logwatch/conf/logfiles/cfddns.conf)](#logfile-group-file-etclogwatchconflogfilescfddnsconf)
+        - [Log file location](#log-file-location)
+        - [Archive location and name format](#archive-location-and-name-format)
+        - [External script for timestamp processing](#external-script-for-timestamp-processing)
+    - [Service definition file (/etc/logwatch/conf/services/cfddns.conf)](#service-definition-file-etclogwatchconfservicescfddnsconf)
+        - [LogFile group definition](#logfile-group-definition)
+        - [Report title](#report-title)
+    - [Service script (/etc/logwatch/scripts/services/cfddns)](#service-script-etclogwatchscriptsservicescfddns)
+        - [Detail levels](#detail-levels)
+    - [Timestamp processing script (/etc/logwatch/scripts/shared/sqfullstampanywhere)](#timestamp-processing-script-etclogwatchscriptssharedsqfullstampanywhere)
+        - [The time format specification](#the-time-format-specification)
+        - [The search REGEX](#the-search-regex)
+    - [Testing](#testing)
+    - [Final thoughts](#final-thoughts)
+
 ## LogFile Group file (/etc/logwatch/conf/logfiles/cfddns.conf)
 
 ### Log file location
