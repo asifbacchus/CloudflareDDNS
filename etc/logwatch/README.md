@@ -89,6 +89,7 @@ so your filename should be all lowercase also.
 ## Service definition file (/etc/logwatch/conf/services/cfddns.conf)
 
 ### LogFile Group file definition
+
 The service file needs to know what group of log files it is responsible for
 processing.  This MUST match the name of your *LogFile Group file*:
 
@@ -101,6 +102,7 @@ If you change your LogFile Group filename, then update it here too without the
 *.conf* extension.
 
 ### Report title
+
 The Logwatch output file (html or text) is divided into sections.  You can
 define the title to be anything that has meaning for you.  I have arbitrarily
 chosen *"CloudFlare DDNS update"* but you can change it to anything you want by
@@ -128,45 +130,42 @@ file as standard input (STDIN) for the script and then takes whatever is output
 
 The script supports four (4) detail levels as follows:
 
--  **Level 0: Summary output only**
-    -  This will display an aggregate total of certain logged elements.  It will
-       display the total number of hostnames (A and AAAA) that are already
-       up-to-date, those that needed updating, those successfully updated and
-       the total number of errors (of any type) encountered by the script.  All
-       totals are relative to the reporting period Logwatch is using (--range
-       parameter).
+- **Level 0: Summary output only**
+  - This will display an aggregate total of certain logged elements.  It will
+    display the total number of hostnames (A and AAAA) that are already
+    up-to-date, those that needed updating, those successfully updated and the
+    total number of errors (of any type) encountered by the script.  All totals
+    are relative to the reporting period Logwatch is using (--range parameter).
 
-       **This is the recommended reporting level.**  It does not
-       take up much space and is quick to read.  If you see successful updates
-       match the number of needed updates and no errors logged, then things are
-       working properly.  If you notice errors, you should consult the full
-       logs.
--  **Levels 1-4: Critical messages**
-    -  This uses the data which is summarized by Level 0 but outputs the actual
-       messages in the log file.  For example, you will see the actual text of
-       the errors logged instead of just a total number of errors.  This level
-       of reporting is useful when *initially* monitoring the script's
-       operation since you can see the actual text of any generated errors.
--  **Level 5: Verbose (debugging) output**
-    -  Like the previous level, this outputs the actual messages found in the
-       log file.  However, it also includes *[INFO] tags* which contain logged
-       messages such as the detected IP address and the specific names of any
-       hostnames not found in your Cloudflare account, etc.  This level of
-       reporting is useful in diagnosing why errors are occurring or if you just
-       want more insight into how the script works.
-       
-       **This level of output will
-       make your Logwatch reports longer and consume more of your time to
-       review. You should not use this level day-to-day.**
+    **This is the recommended reporting level.**  It does not take up much space
+    and is quick to read.  If you see successful updates match the number of
+    needed updates and no errors logged, then things are working properly.  If
+    you notice errors, you should consult the full logs.
+- **Levels 1-4: Critical messages**
+  - This uses the data which is summarized by Level 0 but outputs the actual
+    messages in the log file.  For example, you will see the actual text of the
+    errors logged instead of just a total number of errors.  This level of
+    reporting is useful when *initially* monitoring the script's operation since
+    you can see the actual text of any generated errors.
+- **Level 5: Verbose (debugging) output**
+  - Like the previous level, this outputs the actual messages found in the log
+    file.  However, it also includes *[INFO] tags* which contain logged messages
+    such as the detected IP address and the specific names of any hostnames not
+    found in your Cloudflare account, etc.  This level of reporting is useful in
+    diagnosing why errors are occurring or if you just want more insight into
+    how the script works.
+
+    **This level of output will make your Logwatch reports longer and consume
+    more of your time to review. You should not use this level day-to-day.**
 - **Levels 6+: Complete log file dump**
-    -  Any number greater than 5 passed as a detail level will trigger the
-       script to dump the entire log file out to Logwatch line-by-line.  This is
-       useful only if you are debugging an issue and cannot get access to the
-       actual raw log file itself.  The actual log file is colour-coded which
-       makes it much easier to read for debugging purposes.
-       
-       **Use this detail level only when you need
-       to see the entire log file and cannot otherwise access the log file.**
+  - Any number greater than 5 passed as a detail level will trigger the script
+    to dump the entire log file out to Logwatch line-by-line.  This is useful
+    only if you are debugging an issue and cannot get access to the actual raw
+    log file itself.  The actual log file is colour-coded which makes it much
+    easier to read for debugging purposes.
+
+    **Use this detail level only when you need to see the entire log file and
+    cannot otherwise access the log file.**
 
 ## Timestamp processing script (/etc/logwatch/scripts/shared/sqfullstampanywhere)
 
