@@ -15,6 +15,7 @@ archive already.  Below are the details of each file.
 - [Service definition file (/etc/logwatch/conf/services/cfddns.conf)](#service-definition-file-etclogwatchconfservicescfddnsconf)
     - [LogFile Group file definition](#logfile-group-file-definition)
     - [Report title](#report-title)
+    - [Detail level](#detail-level)
 - [Service script (/etc/logwatch/scripts/services/cfddns)](#service-script-etclogwatchscriptsservicescfddns)
     - [Detail levels](#detail-levels)
 - [Timestamp processing script (/etc/logwatch/scripts/shared/sqfullstampanywhere)](#timestamp-processing-script-etclogwatchscriptssharedsqfullstampanywhere)
@@ -111,6 +112,28 @@ modifying the line:
 ```Ini
 ...
 Title = "CloudFlare DDNS update"
+```
+### Detail level
+
+If you want to set the *detail* level of this service differently from your
+other services (which will use the *--detail* switch value or the value in your
+*logwatch.conf*), then you can define that level here.  By default, it appears
+like this in the service configuration file:
+
+```Ini
+...
+# Override the detail level for this service
+# Remember the levels are: 0, 1-4, 5, 6+
+# Detail = 0
+```
+
+Simply change it to the value you want enforced.  For example, here I'm setting
+it to output level 5 regardless of whatever settings everything else is using.
+
+```Ini
+# Override the detail level for this service
+# Remember the levels are: 0, 1-4, 5, 6+
+Detail = 5
 ```
 
 ## Service script (/etc/logwatch/scripts/services/cfddns)
