@@ -45,6 +45,23 @@ badParam() {
     fi
 }
 
+exitError() {
+    if [ -z "$1" ]; then
+        printf "%s[%s] ERROR: An unspecified error occurred. Exiting.%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+        exit 99
+    elif [ "$1" -eq 10 ]; then
+        errMsg="Unable to auto-detect IP address. Try again later or supply the IP address to be used."
+    fi
+    printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$errMsg" "$1" "$norm" >>"$logFile"
+    printf "%s[%s] -- CloudFlare DDNS update-script: execution completed with error --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+    exit "$1"
+}
+
+exitOK() {
+    printf "%s[%s] -- CloudFlare DDNS update-script: execution complete --%s\n" "$ok" "$(stamp)" "$norm" >>"$logFile"
+    exit 0
+}
+
 stamp() {
     (date +%F" "%T)
 }
@@ -52,14 +69,6 @@ stamp() {
 scriptHelp() {
     printf "\nEventually an in-script help will be here...\n\n"
     exit 0
-}
-
-quit() {
-    if [ -z "$1" ]; then
-        # exit gracefully
-        printf "%s[%s] -- CloudFlare DDNS update-script: execution complete --%s\n" "$ok" "$(stamp)" "$norm" >>"$logFile"
-        exit 0
-    fi
 }
 
 ### default variable values
@@ -70,11 +79,11 @@ accountFile="$scriptPath/cloudflare.credentials"
 colourizeLogFile=1
 dnsRecords=""
 dnsSeparator=","
-ipAddress="$(hostname -i)"
+ipAddress=""
 ip4=1
 ip6=0
-errCount=0
-warnCount=0
+ip4DetectionSvc="http://ipv4.icanhazip.com"
+ip6DetectionSvc="http://ipv6.icanhazip.com"
 
 ### process startup parameters
 if [ -z "$1" ]; then
@@ -173,25 +182,49 @@ fi
     printf "%sParameters:\n" "$magenta"
     printf "script path: %s\n" "$scriptPath/$scriptName"
     printf "credentials file: %s\n" "$accountFile"
-    if [ "$ip4" = 1 ]; then
-        printf "mode: IP4\n"
-    elif [ "$ip6" = 1 ]; then
-        printf "mode: IP6\n"
-    fi
-    printf "ddns ip address: %s\n" "$ipAddress"
-    # iterate DNS records to update
-    dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
-    while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
-        record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
-        dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
-        printf "updating record: %s\n" "$record"
-    done
-    printf "(end of parameter list)%s\n" "$norm"
 } >>"$logFile"
 
-exit 0
+if [ "$ip4" -eq 1 ]; then
+    printf "mode: IP4\n" >>"$logFile"
+elif [ "$ip6" -eq 1 ]; then
+    printf "mode: IP6\n" >>"$logFile"
+fi
+
+# detect and report IP address
+if [ -z "$ipAddress" ]; then
+    # detect public ip address
+    if [ "$ip4" -eq 1 ]; then
+        if ! ipAddress="$(curl -s $ip4DetectionSvc)"; then
+            printf "ddns ip address: %serror%s\n" "$err" "$norm" >>"$logFile"
+            exitError 10
+        fi
+    fi
+    if [ "$ip6" -eq 1 ]; then
+        if ! ipAddress="$(curl -s $ip6DetectionSvc)"; then
+            printf "ddns ip address: %serror%s\n" "$err" "$norm" >>"$logFile"
+            exitError 10
+        fi
+    fi
+    printf "ddns ip address (detected): %s\n" "$ipAddress" >>"$logFile"
+else
+    printf "ddns ip address (supplied): %s\n" "$ipAddress" >>"$logFile"
+fi
+
+# iterate DNS records to update
+dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
+while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
+    record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
+    dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
+    printf "updating record: %s\n" "$record" >>"$logFile"
+done
+
+printf "(end of parameter list)%s\n" "$norm" >>"$logFile"
+
+# exit gracefully
+exitOK
 
 ### exit return codes
 # 0:    normal exit, no errors
 # 1:    invalid or unknown parameter
 # 2:    cannot find or access curl
+# 99:   unspecified error occurred
