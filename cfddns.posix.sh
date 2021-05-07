@@ -133,6 +133,7 @@ while [ $# -gt 0 ]; do
     -4 | --ip4 | --ipv4)
         # operate in IP4 mode (default)
         ip4=1
+        ip6=0
         ;;
     -6 | --ip6 | --ipv6)
         # operate in IP6 mode
@@ -154,7 +155,6 @@ if ! command -v curl >/dev/null; then
     exit 2
 fi
 [ -z "$dnsRecords" ] && badParam errMsg "You must specify at least one DNS record to update. Exiting."
-[ "$ip4" -eq 1 ] && [ "$ip6" -eq 1 ] && badParam errMsg "Cannot operate in IP4 and IP6 modes simultaneously. Exiting."
 # turn off log file colourization if parameter is set
 if [ "$colourizeLogFile" -eq 0 ]; then
     bold=""
