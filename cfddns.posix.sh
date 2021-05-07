@@ -57,7 +57,7 @@ scriptHelp() {
 quit() {
     if [ -z "$1" ]; then
         # exit gracefully
-        printf "\n%s%s -- %s completed --%s\n\n" "$ok" "$(stamp)" "$scriptName" "$norm" >>"$logFile"
+        printf "%s[%s] -- CloudFlare DDNS update-script: execution complete --%s\n" "$ok" "$(stamp)" "$norm" >>"$logFile"
         exit 0
     fi
 }
@@ -148,25 +148,49 @@ while [ $# -gt 0 ]; do
 done
 
 ### pre-flight checks
+if ! command -v curl >/dev/null; then
+    printf "\n%sThis script requires curl be installed and accessible. Exiting.%s\n\n" "$err" "$norm"
+    exit 2
+fi
 [ -z "$dnsRecords" ] && badParam errMsg "You must specify at least one DNS record to update. Exiting."
 [ "$ip4" -eq 1 ] && [ "$ip6" -eq 1 ] && badParam errMsg "Cannot operate in IP4 and IP6 modes simultaneously. Exiting."
-
-printf "\nscript: %s\n" "$scriptPath/$scriptName"
-printf "accountFile: %s\n" "$accountFile"
-printf "colourize: %s\n" "$colourizeLogFile"
-if [ "$ip4" = 1 ]; then
-    printf "mode: IP4\n"
-elif [ "$ip6" = 1 ]; then
-    printf "mode: IP6\n"
+# turn off log file colourization if parameter is set
+if [ "$colourizeLogFile" -eq 0 ]; then
+    bold=""
+    cyan=""
+    err=""
+    magenta=""
+    norm=""
+    ok=""
+    warn=""
+    yellow=""
 fi
-printf "ip address: %s\n" "$ipAddress"
 
-# iterate DNS records to update
-dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
-while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
-    record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
-    dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
-    printf "update record: %s\n" "$record"
-done
+### initial log entries
+{
+    printf "%s[%s] -- CloudFlare DDNS update-script: execution starting --%s\n" "$ok" "$(stamp)" "$norm"
+    printf "%sParameters:\n" "$magenta"
+    printf "script path: %s\n" "$scriptPath/$scriptName"
+    printf "credentials file: %s\n" "$accountFile"
+    if [ "$ip4" = 1 ]; then
+        printf "mode: IP4\n"
+    elif [ "$ip6" = 1 ]; then
+        printf "mode: IP6\n"
+    fi
+    printf "ddns ip address: %s\n" "$ipAddress"
+    # iterate DNS records to update
+    dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
+    while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
+        record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
+        dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
+        printf "updating record: %s\n" "$record"
+    done
+    printf "(end of parameter list)%s\n" "$norm"
+} >>"$logFile"
 
 exit 0
+
+### exit return codes
+# 0:    normal exit, no errors
+# 1:    invalid or unknown parameter
+# 2:    cannot find or access curl
