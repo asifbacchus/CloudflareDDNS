@@ -137,6 +137,7 @@ while [ $# -gt 0 ]; do
     -6 | --ip6 | --ipv6)
         # operate in IP6 mode
         ip6=1
+        ip4=0
         ;;
     *)
         printf "\n%sUnknown option: %s\n" "$err" "$1"
