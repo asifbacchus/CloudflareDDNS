@@ -277,6 +277,10 @@ if ! command -v jq >/dev/null; then
     exit 2
 fi
 [ -z "$dnsRecords" ] && badParam errMsg "You must specify at least one DNS record to update. Exiting."
+# verify credentials file exists and is not empty (default check)
+if [ ! -f "$accountFile" ] || [ ! -s "$accountFile" ]; then
+    badParam errMsg "Cannot find CloudFlare credentials file (${accountFile}). Exiting."
+fi
 # turn off log file colourization if parameter is set
 if [ "$colourizeLogFile" -eq 0 ]; then
     bold=""
