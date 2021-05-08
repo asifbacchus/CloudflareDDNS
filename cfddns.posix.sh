@@ -102,7 +102,6 @@ ip4=1
 ip6=0
 ip4DetectionSvc="http://ipv4.icanhazip.com"
 ip6DetectionSvc="http://ipv6.icanhazip.com"
-useCFProxy="false"
 invalidDomainCount=0
 failedDomainCount=0
 
@@ -159,10 +158,6 @@ while [ $# -gt 0 ]; do
         else
             badParam null "$@"
         fi
-        ;;
-    -p | --proxy)
-        # use CloudFlare proxy for all updated hosts
-        useCFProxy="true"
         ;;
     -4 | --ip4 | --ipv4)
         # operate in IP4 mode (default)
@@ -308,24 +303,8 @@ while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && {
         else
             # update record
             printf "%s[%s] Updating IP address for %s... " "$cyan" "$(stamp)" "$record" >>"$logFile"
-            if [ "$ip4" -eq 1 ]; then
-                updateJSON="$(jq -n \
-                    --arg key0 type --arg value0 A \
-                    --arg key1 name --arg value1 "${record}" \
-                    --arg key2 content --arg value2 "${ipAddress}" \
-                    --arg key3 ttl --arg value3 1 \
-                    --arg key4 proxied --arg value4 "${useCFProxy}" \
-                    '{($key0):$value0,($key1):$value1,($key2):$value2,($key3):$value3,($key4):$value4}')"
-            elif [ "$ip6" -eq 1 ]; then
-                updateJSON="$(jq -n \
-                    --arg key0 type --arg value0 AAAA \
-                    --arg key1 name --arg value1 "${record}" \
-                    --arg key2 content --arg value2 "${ipAddress}" \
-                    --arg key3 ttl --arg value3 1 \
-                    --arg key4 proxied --arg value4 "${useCFProxy}" \
-                    '{($key0):$value0,($key1):$value1,($key2):$value2,($key3):$value3,($key4):$value4}')"
-            fi
-            if ! cfResult="$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records/${objectId}" \
+            updateJSON="$(jq -n --arg key0 content --arg value0 "${ipAddress}" '{($key0):$value0}')"
+            if ! cfResult="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records/${objectId}" \
                 -H "Authorization: Bearer ${cfKey}" \
                 -H "Content-Type: application/json" \
                 --data "${updateJSON}")"; then
