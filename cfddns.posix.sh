@@ -85,8 +85,64 @@ stamp() {
 }
 
 scriptHelp() {
-    printf "\nEventually an in-script help will be here...\n\n"
+    newline
+    printf "Update CloudFlare DNS host A/AAAA records with current IP address.\n"
+    printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
+    textblock "The only required parameter is '--records' which is a comma-delimited list of hostnames to update. However, there are several other options which may be useful to implement."
+    textblock "Paramters are listed below and followed by a description of their effect. If a default value exists, it will be listed on the following line in (parentheses)."
+    newline
+    textblock "${magenta}--- script related parameters ---${norm}"
+    newline
+    textblockSwitches "-c | --cred | --creds | --credentials | -f (deprecated, backward-compatability)"
+    textblock "Path to file containing your CloudFlare *token* credentials. Please refer to the repo README for more information on format, etc."
+    textblockDefaults "(${accountFile})"
+    newline
+    textblockSwitches "-l | --log"
+    textblock "Path where the log file should be written."
+    textblockDefaults "(${logFile})"
+    newline
+    textblockSwitches "--nc | --no-color | --no-colour"
+    textblock "Switch value. Disables ANSI colours in the log file. Useful if you review the logs using a reader that does not parse ANSI colour codes."
+    textblockDefaults "(disabled: print logs in colour)"
+    newline
+    textblockSwitches "-h | --help | -?"
+    textblock "Display this help screen."
+    newline
+    textblock "${magenta}--- DNS related parameters ---${norm}"
+    newline
+    textblockSwitches "-r | --record | --records"
+    textblock "Comma-delimited list of hostnames for which IP addresses should be updated in CloudFlare DNS. This parameter is REQUIRED. Note that this script will only *update* records, it will not create new ones. If you supply hostnames that are not already defined in DNS, the script will log a warning and will skip those hostnames."
+    newline
+    textblockSwitches "-i | --ip | --ip-address | -a | --address"
+    textblock "New IP address for DNS host records. If you omit this, the script will attempt to auto-detect your public IP address and use that."
+    newline
+    textblockSwitches "-4 | --ip4 | --ipv4"
+    textblock "Switch value. Update Host 'A' records (IP4) only. Note that this script can only update either A *or* AAAA records. If you need to update both, you'll have to run the script once in IP4 mode and again in IP6 mode. If you specify both this switch and the IP6 switch, the last one specified will take effect."
+    textblockDefaults "(enabled: update A records)"
+    newline
+    textblockSwitches "-6 | --ip6 | --ipv6"
+    textblock "Switch value. Update Host 'AAAA' records (IP6) only. Note that this script can only update either A *or* AAAA records. If you need to update both, you'll have to run the script once in IP4 mode and again in IP6 mode. If you specify both this switch and the IP4 switch, the last one specified will take effect."
+    textblockDefaults "(disabled: update A records)"
+    newline
+    textblock "Please refer to the repo README for more detailed information regarding this script and how to automate and monitor it."
+    newline
     exit 0
+}
+
+textblock() {
+    printf "%s\n" "$1" | fold -w "$width" -s
+}
+
+textblockDefaults() {
+    printf "%s%s%s\n" "$yellow" "$1" "$norm"
+}
+
+textblockSwitches() {
+    printf "%s%s%s\n" "$cyan" "$1" "$norm"
+}
+
+newline() {
+    printf "\n"
 }
 
 ### default variable values
