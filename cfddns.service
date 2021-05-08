@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/cfddns.sh -f /path/to/account.details -r server.domain.tld -l /var/log/cfddns.log
-ExecStart=/usr/local/bin/cfddns.sh -6 -f /path/to/account.details -r server.domain.tld -l /var/log/cfddns.log
+ExecStart=/usr/local/bin/cfddns.sh -c /path/to/account.details -r server.domain.tld -l /var/log/cfddns.log
+ExecStart=/usr/local/bin/cfddns.sh -6 -c /path/to/account.details -r server.domain.tld -l /var/log/cfddns.log
 
 [Install]
 WantedBy=multi-user.target
