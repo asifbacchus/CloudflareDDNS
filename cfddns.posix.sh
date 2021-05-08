@@ -102,8 +102,16 @@ scriptHelp() {
     textblockDefaults "(${logFile})"
     newline
     textblockSwitches "--nc | --no-color | --no-colour"
-    textblock "Switch value. Disables ANSI colours in the log file. Useful if you review the logs using a reader that does not parse ANSI colour codes."
+    textblock "Switch value. Disables ANSI colours in the log. Useful if you review the logs using a reader that does not parse ANSI colour codes."
     textblockDefaults "(disabled: print logs in colour)"
+    newline
+    textblockSwitches "--log-console"
+    textblock "Switch value. Output log to console (stdout) instead of a log file. Can be combined with --nc if desired."
+    textblockDefaults "(disabled: output to log file)"
+    newline
+    textblockSwitches "--no-log"
+    textblock "Switch value. Do not create a log (i.e. no console, no file). You will not have *any* output from the script if you choose this option, so you will not know if updates succeeded or failed."
+    textblockDefaults "(disabled: output to log file)"
     newline
     textblockSwitches "-h | --help | -?"
     textblock "Display this help screen."
@@ -212,6 +220,14 @@ while [ $# -gt 0 ]; do
         else
             badParam null "$@"
         fi
+        ;;
+    --log-console)
+        # log to the console instead of a file
+        logFile="/dev/stdout"
+        ;;
+    --no-log)
+        # do not log anything
+        logFile="/dev/null"
         ;;
     --nc | --no-color | --no-colour)
         # do not colourize log file
