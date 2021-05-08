@@ -89,11 +89,11 @@ scriptHelp() {
     printf "Update CloudFlare DNS host A/AAAA records with current IP address.\n"
     printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
     textblock "The only required parameter is '--records' which is a comma-delimited list of hostnames to update. However, there are several other options which may be useful to implement."
-    textblock "Paramters are listed below and followed by a description of their effect. If a default value exists, it will be listed on the following line in (parentheses)."
+    textblock "Parameters are listed below and followed by a description of their effect. If a default value exists, it will be listed on the following line in (parentheses)."
     newline
     textblock "${magenta}--- script related parameters ---${norm}"
     newline
-    textblockSwitches "-c | --cred | --creds | --credentials | -f (deprecated, backward-compatability)"
+    textblockSwitches "-c | --cred | --creds | --credentials | -f (deprecated, backward-compatibility)"
     textblock "Path to file containing your CloudFlare *token* credentials. Please refer to the repo README for more information on format, etc."
     textblockDefaults "(${accountFile})"
     newline
