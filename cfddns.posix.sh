@@ -46,14 +46,32 @@ badParam() {
 }
 
 exitError() {
-    if [ -z "$1" ]; then
+    case "$1" in
+    10)
+        errMsg="Unable to auto-detect IP address. Try again later or supply the IP address to be used."
+        ;;
+    20)
+        errMsg="CloudFlare authorized email address (cfEmail) is either null or undefined. Please check your CloudFlare credentials file."
+        ;;
+    21)
+        errMsg="CloudFlare authorized API key (cfKey) is either null or undefined. Please check your CloudFlare credentials file."
+        ;;
+    22)
+        errMsg="CloudFlare zone id (cfZoneId) is either null or undefined. Please check your CloudFlare credentials file."
+        ;;
+    25)
+        errMsg="Unable to query CloudFlare account. Please re-check your credentials and try again later."
+        ;;
+    98)
+        errMsg="One or more domain updates failed. Please review this log file for details."
+        ;;
+    *)
         printf "%s[%s] ERROR: An unspecified error occurred. Exiting.%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
         exit 99
-    elif [ "$1" -eq 10 ]; then
-        errMsg="Unable to auto-detect IP address. Try again later or supply the IP address to be used."
-    fi
+        ;;
+    esac
     printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$errMsg" "$1" "$norm" >>"$logFile"
-    printf "%s[%s] -- CloudFlare DDNS update-script: execution completed with error --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+    printf "%s[%s] -- CloudFlare DDNS update-script: execution completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
     exit "$1"
 }
 
@@ -84,6 +102,9 @@ ip4=1
 ip6=0
 ip4DetectionSvc="http://ipv4.icanhazip.com"
 ip6DetectionSvc="http://ipv6.icanhazip.com"
+useCFProxy="false"
+invalidDomainCount=0
+failedDomainCount=0
 
 ### process startup parameters
 if [ -z "$1" ]; then
@@ -139,6 +160,10 @@ while [ $# -gt 0 ]; do
             badParam null "$@"
         fi
         ;;
+    -p | --proxy)
+        # use CloudFlare proxy for all updated hosts
+        useCFProxy="true"
+        ;;
     -4 | --ip4 | --ipv4)
         # operate in IP4 mode (default)
         ip4=1
@@ -160,7 +185,11 @@ done
 
 ### pre-flight checks
 if ! command -v curl >/dev/null; then
-    printf "\n%sThis script requires curl be installed and accessible. Exiting.%s\n\n" "$err" "$norm"
+    printf "\n%sThis script requires 'curl' be installed and accessible. Exiting.%s\n\n" "$err" "$norm"
+    exit 2
+fi
+if ! command -v jq >/dev/null; then
+    printf "\n%sThis script requires 'jq' be installed and accessible. Exiting.%s\n\n" "$err" "$norm"
     exit 2
 fi
 [ -z "$dnsRecords" ] && badParam errMsg "You must specify at least one DNS record to update. Exiting."
@@ -220,11 +249,121 @@ done
 
 printf "(end of parameter list)%s\n" "$norm" >>"$logFile"
 
-# exit gracefully
-exitOK
+### read CloudFlare credentials
+printf "[%s] Reading CloudFlare credentials... " "$(stamp)" >>"$logFile"
+case "$accountFile" in
+/*)
+    # absolute path, use as-is
+    # shellcheck source=./cloudflare.credentials
+    . "$accountFile"
+    ;;
+*)
+    # relative path, rewrite
+    # shellcheck source=./cloudflare.credentials
+    . "./$accountFile"
+    ;;
+esac
+if [ -z "$cfEmail" ]; then
+    printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+    exitError 20
+elif [ -z "$cfKey" ]; then
+    printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+    exitError 21
+elif [ -z "$cfZoneId" ]; then
+    printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+    exitError 22
+fi
+printf "DONE%s\n" "$norm" >>"$logFile"
+
+### check if records to be updated exist and if they need updating, update as required
+dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
+if [ "$ip4" -eq 1 ]; then
+    recordType="A"
+elif [ "$ip6" -eq 1 ]; then
+    recordType="AAAA"
+fi
+while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
+    record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
+    dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
+    printf "[%s] Processing %s... " "$(stamp)" "$record" >>"$logFile"
+    # check for existing record, else exit with error (this script does NOT create new records, only updates them!)
+    if ! cfResult="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records?name=${record}&type=${recordType}" \
+        -H "Authorization: Bearer ${cfKey}" \
+        -H "Content-Type: application/json")"; then
+        printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+        exitError 25
+    fi
+    resultCount="$(printf "%s" "$cfResult" | jq '.result_info.count')"
+    if [ "$resultCount" = "0" ]; then
+        printf "%sNOT FOUND%s\n" "$warn" "$norm" >>"$logFile"
+        printf "%s[%s] WARNING: Cannot find existing record to update for DNS entry: %s%s\n" "$warn" "$(stamp)" "$record" "$norm" >>"$logFile"
+        invalidDomainCount=$((invalidDomainCount + 1))
+    else
+        objectId=$(printf "%s" "$cfResult" | jq -r '.result | .[] | .id')
+        currentIpAddr=$(printf "%s" "$cfResult" | jq -r '.result | .[] | .content')
+        printf "FOUND: IP = %s\n" "$currentIpAddr" >>"$logFile"
+        # check if record needs updating
+        if [ "$currentIpAddr" = "$ipAddress" ]; then
+            printf "%s[%s] IP address for %s is already up-to-date%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
+        else
+            # update record
+            printf "%s[%s] Updating IP address for %s... " "$cyan" "$(stamp)" "$record" >>"$logFile"
+            if [ "$ip4" -eq 1 ]; then
+                updateJSON="$(jq -n \
+                    --arg key0 type --arg value0 A \
+                    --arg key1 name --arg value1 "${record}" \
+                    --arg key2 content --arg value2 "${ipAddress}" \
+                    --arg key3 ttl --arg value3 1 \
+                    --arg key4 proxied --arg value4 "${useCFProxy}" \
+                    '{($key0):$value0,($key1):$value1,($key2):$value2,($key3):$value3,($key4):$value4}')"
+            elif [ "$ip6" -eq 1 ]; then
+                updateJSON="$(jq -n \
+                    --arg key0 type --arg value0 AAAA \
+                    --arg key1 name --arg value1 "${record}" \
+                    --arg key2 content --arg value2 "${ipAddress}" \
+                    --arg key3 ttl --arg value3 1 \
+                    --arg key4 proxied --arg value4 "${useCFProxy}" \
+                    '{($key0):$value0,($key1):$value1,($key2):$value2,($key3):$value3,($key4):$value4}')"
+            fi
+            if ! cfResult="$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records/${objectId}" \
+                -H "Authorization: Bearer ${cfKey}" \
+                -H "Content-Type: application/json" \
+                --data "${updateJSON}")"; then
+                printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+                exitError 25
+            fi
+            updateSuccess="$(printf "%s" "$cfResult" | jq '.success')"
+            if [ "$updateSuccess" = "true" ]; then
+                printf "DONE%s\n" "$norm" >>"$logFile"
+                printf "%s[%s] SUCCESS: IP address for %s updated%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
+            else
+                printf "%sFAILED%s\n" "$err" "$norm" >>"$logFile"
+                printf "%s[%s] ERROR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
+                failedDomainCount=$((failedDomainCount + 1))
+            fi
+        fi
+    fi
+done
+
+# exit
+if [ "$invalidDomainCount" -ne 0 ]; then
+    printf "%s[%s] -- WARNING: %s invalid domain(s) were supplied for updating --%s\n" "$warn" "$(stamp)" "$invalidDomainCount" "$norm" >>"$logFile"
+fi
+if [ "$failedDomainCount" -ne 0 ]; then
+    exitError 98
+else
+    exitOK
+fi
 
 ### exit return codes
 # 0:    normal exit, no errors
 # 1:    invalid or unknown parameter
-# 2:    cannot find or access curl
+# 2:    cannot find or access required external program(s)
+# 10:   cannot auto-detect IP address
+# 20:   accountFile has a null or missing cfEmail variable
+# 21:   accountFile has a null or missing cfKey variable
+# 22:   accountFile has a null or missing cfZoneId variable
+# 25:   unable to query CloudFlare account
+# 97:   script completed with warnings
+# 98:   one or more updates failed
 # 99:   unspecified error occurred
