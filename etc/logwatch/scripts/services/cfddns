@@ -4,7 +4,7 @@
 # $Id$
 #############################################################################
 # Log: CloudFlare updater script (cfddns)
-# Revision 1.0  2018/09/26
+# Revision 2.0  2021/05/08
 # Written by Asif Bacchus
 #############################################################################
 
@@ -17,9 +17,10 @@ my $detailLevel = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
 
 ### Declare variables
 my $summaryErr;
-my $summaryStatusUpToDate;
-my $summaryStatusNeedsUpdating;
-my $summarySuccess;
+my $summaryFailedUpdate;
+my $summaryInvalidHost;
+my $summaryUpdated;
+my $summaryUpToDate;
 
 my %reportHash = ();
 my $key;
@@ -29,32 +30,38 @@ my $key;
 if ($detailLevel == 0) {
     ### process logfile and summarize message types
     while (defined(my $ThisLine = <STDIN>)) {
-        if ($ThisLine =~ /\-- \[ERROR\] /) {
+        if ($ThisLine =~ /ERROR: Unable to update IP address/) {
+            $summaryFailedUpdate++;
+        }
+        elsif ($ThisLine =~ /ERROR: /) {
             $summaryErr++;
         }
-        elsif ($ThisLine =~ /up-to-date./) {
-            $summaryStatusUpToDate++;
+        elsif ($ThisLine =~ /WARNING: Cannot find existing record/) {
+            $summaryInvalidHost++;
         }
-        elsif ($ThisLine =~ /needs updating.../) {
-            $summaryStatusNeedsUpdating++;
+        elsif ($ThisLine =~ /SUCCESS: /) {
+            $summaryUpdated++;
         }
-        elsif ($ThisLine =~ /\-- \[SUCCESS\] /) {
-            $summarySuccess++;
+        elsif ($ThisLine =~ /already up-to-date/) {
+            $summaryUpToDate++;
         }
     }
 
     ### fill hash table with headings and summary counts
-    if ($summaryStatusNeedsUpdating > 0) {
-        $reportHash{"Entries needing updates"} = $summaryStatusNeedsUpdating;
+    if ($summaryUpdated > 0) {
+        $reportHash{"Entries successfully updated"} = $summaryUpdated;
     }
-    if ($summarySuccess > 0) {
-        $reportHash{"Entries successfully updated"} = $summarySuccess;
+    if ($summaryUpToDate > 0) {
+        $reportHash{"Entries already up-to-date"} = $summaryUpToDate;
     }
-    if ($summaryStatusUpToDate > 0) {
-        $reportHash{"Entries already up-to-date"} = $summaryStatusUpToDate;
+    if ($summaryInvalidHost > 0) {
+        $reportHash{"Undefined hosts"} = $summaryInvalidHost;
+    }
+    if ($summaryFailedUpdate > 0) {
+        $reportHash{"Hosts failed to update"} = $summaryFailedUpdate;
     }
     if ($summaryErr > 0) {
-        $reportHash{"Errors encountered"} = $summaryErr;
+        $reportHash{"Other errors"} = $summaryErr;
     }
 
     ### print hash table
@@ -66,40 +73,23 @@ if ($detailLevel == 0) {
 ### a summary count
 elsif ($detailLevel >= 1 && $detailLevel <= 4) {
     while (defined(my $ThisLine = <STDIN>)) {
-        if ($ThisLine =~ /\-- \[ERROR\] /) {
+        if ($ThisLine =~ /ERROR: /) {
             print $ThisLine;
         }
-        elsif ($ThisLine =~ /\-- \[STATUS\] /) {
+        elsif ($ThisLine =~ /WARNING: Cannot find existing/) {
             print $ThisLine;
         }
-        elsif ($ThisLine =~ /\-- \[SUCCESS\] /) {
-            print $ThisLine;
-        }
-    }
-}
-### Level 5 is similiar to levels 1-4 except it also reports informational
-### messages such as the current working IP address and hostnames being
-### checked.  This is useful when verifying the cfddns.sh script's operation.
-elsif ($detailLevel == 5) {
-    while (defined(my $ThisLine = <STDIN>)) {
-        if ($ThisLine =~ /\-- \[ERROR\] /) {
-            print $ThisLine;
-        }
-        elsif ($ThisLine =~ /\-- \[STATUS\] /) {
-            print $ThisLine;
-        }
-        elsif ($ThisLine =~ /\-- \[SUCCESS\] /) {
-            print $ThisLine;
-        }
-        elsif ($ThisLine =~ /\-- \[INFO\] /) {
+        elsif ($ThisLine =~ /SUCCESS: /) {
             print $ThisLine;
         }
     }
 }
-### Any level above 5 will echo the entire log including the debugging notes
-### within the script meant for troubleshooting.  Using this level of detail
-### should only be done if you cannot view the actual log file directly for
-### whatever reason.  The actual log file is colour-coded for easier debugging.
+### Any level 5 or above will echo the entire log. The log itself is purposefully terse
+### so while this level of detail is likely rarely needed, it is still not an overwhelming
+### level of detail.
+### Generally, however, using this level of detail should only be done if you cannot view
+### the actual log file directly for whatever reason. The actual log file is colour-coded
+### for easier debugging.
 elsif ($detailLevel > 5) {
     while (defined(my $ThisLine = <STDIN>)) {
         print $ThisLine;
