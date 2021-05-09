@@ -209,42 +209,42 @@ textBlockSwitches() {
 
 writeLog() {
     case "$1" in
-        cf)
-            printf "[%s] CF-ERR: %s (code: %s)\n" "$(stamp)" "$2" "$3" >>"$logFile"
-            ;;
-        err)
-            printf "%s[%s] ERR: %s%s\n" "$err" "$(stamp)" "$2" "$norm" >>"$logFile"
-            ;;
-        error)
-            printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$2" "$3" "$norm" >>"$logFile"
-            ;;
-        process)
-            printf "%s[%s] %s... %s" "$cyan" "$(stamp)" "$2" "$norm" >>"$logFile"
-            ;;
-        process-done)
-            printf "%s%s%s\n" "$cyan" "$2" "$norm" >>"$logFile"
-            ;;
-        process-error)
-            printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
-            ;;
-        process-warning)
-            printf "%s%s%s\n" "$warn" "$2" "$norm" >>"$logFile"
-            ;;
-        stamped)
-            printf "[%s] %s\n" "$(stamp)" "$2" >>"$logFile"
-            ;;
-        success)
-            printf "%s[%s] SUCCESS: %s%s\n" "$ok" "$(stamp)" "$2" "$norm" >>"$logFile"
-            ;;
-        warn)
-            printf "%s[%s] WARN: %s%s\n" "$warn" "$(stamp)" "$2" "$norm" >>"$logFile"
-            ;;
-        warning)
-            printf "%s[%s] WARNING: %s%s\n" "$warn" "$(stamp)" "$2" "$norm" >>"$logFile"
-            ;;
-        *)
-            printf "%s\n" "$2" >>"$logFile"
-            ;;
+    cf)
+        printf "[%s] CF-ERR: %s (code: %s)\n" "$(stamp)" "$2" "$3" >>"$logFile"
+        ;;
+    err)
+        printf "%s[%s] ERR: %s%s\n" "$err" "$(stamp)" "$2" "$norm" >>"$logFile"
+        ;;
+    error)
+        printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$2" "$3" "$norm" >>"$logFile"
+        ;;
+    process)
+        printf "%s[%s] %s... %s" "$cyan" "$(stamp)" "$2" "$norm" >>"$logFile"
+        ;;
+    process-done)
+        printf "%s%s%s\n" "$cyan" "$2" "$norm" >>"$logFile"
+        ;;
+    process-error)
+        printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+        ;;
+    process-warning)
+        printf "%s%s%s\n" "$warn" "$2" "$norm" >>"$logFile"
+        ;;
+    stamped)
+        printf "[%s] %s\n" "$(stamp)" "$2" >>"$logFile"
+        ;;
+    success)
+        printf "%s[%s] SUCCESS: %s%s\n" "$ok" "$(stamp)" "$2" "$norm" >>"$logFile"
+        ;;
+    warn)
+        printf "%s[%s] WARN: %s%s\n" "$warn" "$(stamp)" "$2" "$norm" >>"$logFile"
+        ;;
+    warning)
+        printf "%s[%s] WARNING: %s%s\n" "$warn" "$(stamp)" "$2" "$norm" >>"$logFile"
+        ;;
+    *)
+        printf "%s\n" "$2" >>"$logFile"
+        ;;
     esac
 }
 
@@ -530,7 +530,7 @@ done
 
 # exit
 if [ "$invalidDomainCount" -ne 0 ]; then
-    writeLog warning "${invalidDomainCount} invalid host(s) were supplied for updating."
+    writeLog warning "${invalidDomainCount} invalid host(s) supplied for updating."
 fi
 if [ "$failedHostCount" -ne 0 ]; then
     exitError 26
