@@ -63,13 +63,15 @@ exitError() {
         errMsg="Cloudflare zone id (cfZoneId) is either null or undefined. Please check your Cloudflare credentials file."
         ;;
     25)
-        errMsg="Cloudflare API error. Please review any 'CF-ERROR' lines in this log for details."
+        errMsg="Cloudflare API error. Please review any 'CF-ERR:' lines in this log for details."
         ;;
     26)
-        errMsg="${failedDomainCount} domain update(s) failed. Any 'CF-ERROR' lines noted in this log may help determine what went wrong."
+        errMsg="${failedDomainCount} domain update(s) failed. Any 'CF-ERR:' lines noted in this log may help determine what went wrong."
         ;;
     *)
-        printf "%s[%s] ERROR: An unspecified error occurred. Exiting.%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+        printf "%s[%s] ERR: Unknown error. (code: 99)%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+        printf "%s[%s] ERROR: An unspecified error occurred.%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+        printf "%s[%s] -- Cloudflare DDNS update-script: execution completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
         exit 99
         ;;
     esac
@@ -99,7 +101,7 @@ listCFErrors() {
         messages="${messages#*_}"
 
         # output to log
-        printf "[%s] CF-ERROR: Code %s. %s\n" "$(stamp)" "$code" "$message"
+        printf "[%s] CF-ERR: Code %s. %s\n" "$(stamp)" "$code" "$message"
     done
 }
 
@@ -204,7 +206,6 @@ textblockDefaults() {
 textblockSwitches() {
     printf "%s%s%s\n" "$cyan" "$1" "$norm"
 }
-
 
 ### default variable values
 scriptPath="$(CDPATH='' \cd -- "$(dirname -- "$0")" && pwd -P)"
@@ -439,7 +440,7 @@ while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && {
     if [ "$resultCount" = "0" ]; then
         # warn if record of host not found
         printf "%sNOT FOUND%s\n" "$warn" "$norm" >>"$logFile"
-        printf "%s[%s] WARNING: Cannot find existing record to update for DNS entry: %s%s\n" "$warn" "$(stamp)" "$record" "$norm" >>"$logFile"
+        printf "%s[%s] WARN: Cannot find existing record to update for DNS entry: %s%s\n" "$warn" "$(stamp)" "$record" "$norm" >>"$logFile"
         invalidDomainCount=$((invalidDomainCount + 1))
         continue
     fi
@@ -475,7 +476,7 @@ while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && {
     else
         printf "%sFAILED%s\n" "$err" "$norm" >>"$logFile"
         listCFErrors "$cfResult"
-        printf "%s[%s] ERROR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
+        printf "%s[%s] ERR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
         # do not exit with error, API error here is probably an update issue specific to this host
         # increment counter and note it after all processing finished
         failedDomainCount=$((failedDomainCount + 1))
@@ -484,7 +485,7 @@ done
 
 # exit
 if [ "$invalidDomainCount" -ne 0 ]; then
-    printf "%s[%s] -- WARNING: %s invalid domain(s) were supplied for updating --%s\n" "$warn" "$(stamp)" "$invalidDomainCount" "$norm" >>"$logFile"
+    printf "%s[%s] WARNING: %s invalid domain(s) were supplied for updating%s\n" "$warn" "$(stamp)" "$invalidDomainCount" "$norm" >>"$logFile"
 fi
 if [ "$failedDomainCount" -ne 0 ]; then
     exitError 26
