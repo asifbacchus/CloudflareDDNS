@@ -69,19 +69,19 @@ exitError() {
         errMsg="${failedHostCount} host update(s) failed. Any 'CF-ERR:' lines noted in this log may help determine what went wrong."
         ;;
     *)
-        printf "%s[%s] ERR: Unknown error. (code: 99)%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
-        printf "%s[%s] ERROR: An unspecified error occurred.%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
-        printf "%s[%s] -- Cloudflare DDNS update-script: execution completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+        writeLog err "Unspecified error."
+        writeLog error "An unspecified error occurred. (code: 99)"
+        printf "%s[%s] -- Cloudflare DDNS update-script: completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
         exit 99
         ;;
     esac
-    printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$errMsg" "$1" "$norm" >>"$logFile"
-    printf "%s[%s] -- Cloudflare DDNS update-script: execution completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+    writeLog error "$errMsg" "$1"
+    printf "%s[%s] -- Cloudflare DDNS update-script: completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
     exit "$1"
 }
 
 exitOK() {
-    printf "%s[%s] -- Cloudflare DDNS update-script: execution complete --%s\n" "$ok" "$(stamp)" "$norm" >>"$logFile"
+    printf "%s[%s] -- Cloudflare DDNS update-script: completed successfully --%s\n" "$ok" "$(stamp)" "$norm" >>"$logFile"
     exit 0
 }
 
@@ -101,7 +101,7 @@ listCFErrors() {
         messages="${messages#*_}"
 
         # output to log
-        printf "[%s] CF-ERR: Code %s. %s\n" "$(stamp)" "$code" "$message"
+        writeLog cf "$message" "$code"
     done
 }
 
@@ -205,6 +205,47 @@ textBlockDefaults() {
 
 textBlockSwitches() {
     printf "%s%s%s\n" "$cyan" "$1" "$norm"
+}
+
+writeLog() {
+    case "$1" in
+        cf)
+            printf "[%s] CF-ERR: %s (code: %s)\n" "$(stamp)" "$2" "$3" >>"$logFile"
+            ;;
+        err)
+            printf "%s[%s] ERR: %s%s\n" "$err" "$(stamp)" "$2" "$norm" >>"$logFile"
+            ;;
+        error)
+            printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$2" "$3" "$norm" >>"$logFile"
+            ;;
+        process)
+            printf "%s[%s] %s... %s" "$cyan" "$(stamp)" "$1" "$norm" >>"$logFile"
+            ;;
+        process-done)
+            printf "%s%s%s\n" "$cyan" "$1" "$norm" >>"$logFile"
+            ;;
+        process-error)
+            printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+            ;;
+        process-warning)
+            printf "%s%s%s\n" "$warn" "$1" "$norm" >>"$logFile"
+            ;;
+        stamped)
+            printf "[%s] %s\n" "$(stamp)" "$2" >>"$logFile"
+            ;;
+        success)
+            printf "%s[%s] SUCCESS: %s%s\n" "$ok" "$(stamp)" "$2" "$norm" >>"$logFile"
+            ;;
+        warn)
+            printf "%s[%s] WARN: %s%s\n" "$warn" "$(stamp)" "$2" "$norm" >>"$logFile"
+            ;;
+        warning)
+            printf "%s[%s] WARNING: %s%s\n" "$warn" "$(stamp)" "$2" "$norm" >>"$logFile"
+            ;;
+        *)
+            printf "%s\n" "$2" >>"$logFile"
+            ;;
+    esac
 }
 
 ### default variable values
@@ -336,52 +377,52 @@ fi
 
 ### initial log entries
 {
-    printf "%s[%s] -- Cloudflare DDNS update-script: execution starting --%s\n" "$ok" "$(stamp)" "$norm"
+    printf "%s[%s] -- Cloudflare DDNS update-script: starting --%s\n" "$ok" "$(stamp)" "$norm"
     printf "Parameters:\n"
     printf "script path: %s\n" "$scriptPath/$scriptName"
     printf "credentials file: %s\n" "$accountFile"
+
+    if [ "$ip4" -eq 1 ]; then
+        printf "mode: IP4\n"
+    elif [ "$ip6" -eq 1 ]; then
+        printf "mode: IP6\n"
+    fi
+
+    # detect and report IP address
+    if [ -z "$ipAddress" ]; then
+        # detect public ip address
+        if [ "$ip4" -eq 1 ]; then
+            if ! ipAddress="$(curl -s $ip4DetectionSvc)"; then
+                printf "ddns ip address:%s ERROR%s\n" "$err" "$norm"
+                exitError 10
+            fi
+        fi
+        if [ "$ip6" -eq 1 ]; then
+            if ! ipAddress="$(curl -s $ip6DetectionSvc)"; then
+                printf "ddns ip address:%s ERROR%s\n" "$err" "$norm"
+                exitError 10
+            fi
+        fi
+        printf "ddns ip address (detected): %s\n" "$ipAddress"
+    else
+        printf "ddns ip address (supplied): %s\n" "$ipAddress"
+    fi
+
+    # iterate DNS records to update
+    dnsRecordsToUpdate="$(printf '%s' "${1}" | sed "s/${dnsSeparator}*$//")$dnsSeparator"
+    while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator" ]; do
+        record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
+        dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
+
+        if [ -z "$record" ]; then continue; fi
+        printf "updating record: %s\n" "$record"
+    done
+
+    printf "(end of parameter list)\n"
 } >>"$logFile"
 
-if [ "$ip4" -eq 1 ]; then
-    printf "mode: IP4\n" >>"$logFile"
-elif [ "$ip6" -eq 1 ]; then
-    printf "mode: IP6\n" >>"$logFile"
-fi
-
-# detect and report IP address
-if [ -z "$ipAddress" ]; then
-    # detect public ip address
-    if [ "$ip4" -eq 1 ]; then
-        if ! ipAddress="$(curl -s $ip4DetectionSvc)"; then
-            printf "ddns ip address:%s error%s\n" "$err" "$norm" >>"$logFile"
-            exitError 10
-        fi
-    fi
-    if [ "$ip6" -eq 1 ]; then
-        if ! ipAddress="$(curl -s $ip6DetectionSvc)"; then
-            printf "ddns ip address:%s error%s\n" "$err" "$norm" >>"$logFile"
-            exitError 10
-        fi
-    fi
-    printf "ddns ip address (detected): %s\n" "$ipAddress" >>"$logFile"
-else
-    printf "ddns ip address (supplied): %s\n" "$ipAddress" >>"$logFile"
-fi
-
-# iterate DNS records to update
-dnsRecordsToUpdate="$(printf '%s' "${1}" | sed "s/${dnsSeparator}*$//")$dnsSeparator"
-while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator" ]; do
-    record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
-    dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
-
-    if [ -z "$record" ]; then continue; fi
-    printf "updating record: %s\n" "$record" >>"$logFile"
-done
-
-printf "(end of parameter list)\n" >>"$logFile"
-
 ### read Cloudflare credentials
-printf "[%s] Reading Cloudflare credentials... " "$(stamp)" >>"$logFile"
+writeLog process "Reading Cloudflare credentials"
 case "$accountFile" in
 /*)
     # absolute path, use as-is
@@ -395,14 +436,14 @@ case "$accountFile" in
     ;;
 esac
 if [ -z "$cfKey" ]; then
-    printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+    writeLog process-error
     exitError 21
 fi
 if [ -z "$cfZoneId" ]; then
-    printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+    writeLog process-error
     exitError 22
 fi
-printf "DONE%s\n" "$norm" >>"$logFile"
+writeLog process-done "DONE"
 
 ### connect to Cloudflare and do what needs to be done!
 dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
@@ -418,13 +459,13 @@ while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator"
     dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
 
     if [ -z "$record" ]; then continue; fi
-    printf "[%s] Processing %s... " "$(stamp)" "$record" >>"$logFile"
+    writeLog process "Processing ${record}"
 
     # exit if curl/network error
     if ! cfLookup="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records?name=${record}&type=${recordType}" \
         -H "Authorization: Bearer ${cfKey}" \
         -H "Content-Type: application/json")"; then
-        printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+        writeLog process-error
         exitError 3
     fi
 
@@ -433,7 +474,7 @@ while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator"
     # no reason to continue processing other hosts and pile-up errors which might look like a DoS attempt
     cfSuccess="$(printf "%s" "$cfLookup" | jq -r '.success')"
     if [ "$cfSuccess" = "false" ]; then
-        printf "%sERROR%s\n" "$err" "$norm"
+        writeLog process-error
         listCFErrors "$cfLookup"
         exitError 25
     fi
@@ -443,24 +484,24 @@ while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator"
     # skip to next host if cannot find existing host record (this script *updates* only, does not create!)
     if [ "$resultCount" = "0" ]; then
         # warn if record of host not found
-        printf "%sNOT FOUND%s\n" "$warn" "$norm" >>"$logFile"
-        printf "%s[%s] WARN: Cannot find existing record to update for DNS entry: %s%s\n" "$warn" "$(stamp)" "$record" "$norm" >>"$logFile"
+        writeLog process-warning "NOT FOUND"
+        writeLog warn "Cannot find existing record to update for DNS entry: ${record}"
         invalidDomainCount=$((invalidDomainCount + 1))
         continue
     fi
 
     objectId=$(printf "%s" "$cfLookup" | jq -r '.result | .[] | .id')
     currentIpAddr=$(printf "%s" "$cfLookup" | jq -r '.result | .[] | .content')
-    printf "FOUND: IP = %s\n" "$currentIpAddr" >>"$logFile"
+    writeLog process-done "FOUND: IP = ${currentIpAddr}"
 
     # skip to next hostname if record already up-to-date
     if [ "$currentIpAddr" = "$ipAddress" ]; then
-        printf "%s[%s] IP address for %s is already up-to-date%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
+        writeLog stamped "IP address for ${record} is already up-to-date"
         continue
     fi
 
     # update record
-    printf "%s[%s] Updating IP address for %s... " "$cyan" "$(stamp)" "$record" >>"$logFile"
+    writeLog process "Updating IP address for ${record}"
     updateJSON="$(jq -n --arg key0 content --arg value0 "${ipAddress}" '{($key0):$value0}')"
 
     # exit if curl/network error
@@ -468,19 +509,19 @@ while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator"
         -H "Authorization: Bearer ${cfKey}" \
         -H "Content-Type: application/json" \
         --data "${updateJSON}")"; then
-        printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+        writeLog process-error
         exitError 3
     fi
 
     # note update success or failure
     cfSuccess="$(printf "%s" "$cfResult" | jq '.success')"
     if [ "$cfSuccess" = "true" ]; then
-        printf "DONE%s\n" "$norm" >>"$logFile"
-        printf "%s[%s] SUCCESS: IP address for %s updated%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
+        writeLog process-done "DONE"
+        writeLog success "IP address for ${record} updated."
     else
-        printf "%sFAILED%s\n" "$err" "$norm" >>"$logFile"
+        writeLog process-error
         listCFErrors "$cfResult"
-        printf "%s[%s] ERR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
+        writeLog err "Unable to update IP address for ${record}"
         # do not exit with error, API error here is probably an update issue specific to this host
         # increment counter and note it after all processing finished
         failedHostCount=$((failedHostCount + 1))
@@ -489,7 +530,7 @@ done
 
 # exit
 if [ "$invalidDomainCount" -ne 0 ]; then
-    printf "%s[%s] WARNING: %s invalid host(s) were supplied for updating%s\n" "$warn" "$(stamp)" "$invalidDomainCount" "$norm" >>"$logFile"
+    writeLog warning "${invalidDomainCount} invalid host(s) were supplied for updating."
 fi
 if [ "$failedHostCount" -ne 0 ]; then
     exitError 26
