@@ -109,25 +109,25 @@ scriptExamples() {
     newline
     printf "Update Cloudflare DNS host A/AAAA records with current IP address.\n"
     printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
-    textblock "${magenta}--- usage examples ---${norm}"
+    textBlock "${magenta}--- usage examples ---${norm}"
     newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net"
-    textblock "Update Cloudflare DNS records for myserver.mydomain.net with the auto-detected public IP4 address. Credentials will be expected in the default location and the log will be written in the default location also."
+    textBlockSwitches "${scriptName} -r myserver.mydomain.net"
+    textBlock "Update Cloudflare DNS records for myserver.mydomain.net with the auto-detected public IP4 address. Credentials will be expected in the default location and the log will be written in the default location also."
     newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net -6"
-    textblock "Same as above, but update AAAA host records with the auto-detected public IP6 address."
+    textBlockSwitches "${scriptName} -r myserver.mydomain.net -6"
+    textBlock "Same as above, but update AAAA host records with the auto-detected public IP6 address."
     newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net,otherserver.mydomain.net -l /var/log/cfddns.log --nc"
-    textblock "Update DNS entries for both listed hosts using auto-detected IP4 address. Write a non-coloured log to '/var/log/cfddns.log'."
+    textBlockSwitches "${scriptName} -r myserver.mydomain.net,myserver2.mydomain.net -l /var/log/cfddns.log --nc"
+    textBlock "Update DNS entries for both listed hosts using auto-detected IP4 address. Write a non-coloured log to '/var/log/cfddns.log'."
     newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net,otherserver.mydomain.net -l /var/log/cfddns.log --ip6 --ip fd21:7a62:2737:9c3a::a151"
-    textblock "Update DNS AAAA entries for listed hosts using the *specified* IP address. Write a colourful log to the location specified."
+    textBlockSwitches "${scriptName} -r myserver.mydomain.net,myserver2.mydomain.net -l /var/log/cfddns.log --ip6 --ip fd21:7a62:2737:9c3a::a151"
+    textBlock "Update DNS AAAA entries for listed hosts using the *specified* IP address. Write a colourful log to the location specified."
     newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log --ip 1.2.3.4"
-    textblock "Update DNS A entry for listed hostname with the provided IP address. Read cloudflare credentials file from specified location, save log in specified location."
+    textBlockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log --ip 1.2.3.4"
+    textBlock "Update DNS A entry for listed hostname with the provided IP address. Read cloudflare credentials file from specified location, save log in specified location."
     newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log -6 -i fd21:7a62:2737:9c3a::a151"
-    textblock "Exact same as above, but change the AAAA record. This is how you run the script once for IP4 and again for IP6."
+    textBlockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log -6 -i fd21:7a62:2737:9c3a::a151"
+    textBlock "Exact same as above, but change the AAAA record. This is how you run the script once for IP4 and again for IP6."
     exit 0
 }
 
@@ -135,54 +135,54 @@ scriptHelp() {
     newline
     printf "Update Cloudflare DNS host A/AAAA records with current IP address.\n"
     printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
-    textblock "The only required parameter is '--records' which is a comma-delimited list of hostnames to update. However, there are several other options which may be useful to implement."
-    textblock "Parameters are listed below and followed by a description of their effect. If a default value exists, it will be listed on the following line in (parentheses)."
+    textBlock "The only required parameter is '--records' which is a comma-delimited list of hostnames to update. However, there are several other options which may be useful to implement."
+    textBlock "Parameters are listed below and followed by a description of their effect. If a default value exists, it will be listed on the following line in (parentheses)."
     newline
-    textblock "${magenta}--- script related parameters ---${norm}"
+    textBlock "${magenta}--- script related parameters ---${norm}"
     newline
-    textblockSwitches "-c | --cred | --creds | --credentials | -f (deprecated, backward-compatibility)"
-    textblock "Path to file containing your Cloudflare *token* credentials. Please refer to the repo README for more information on format, etc."
-    textblockDefaults "(${accountFile})"
+    textBlockSwitches "-c | --cred | --creds | --credentials | -f (deprecated, backward-compatibility)"
+    textBlock "Path to file containing your Cloudflare *token* credentials. Please refer to the repo README for more information on format, etc."
+    textBlockDefaults "(${accountFile})"
     newline
-    textblockSwitches "-l | --log"
-    textblock "Path where the log file should be written."
-    textblockDefaults "(${logFile})"
+    textBlockSwitches "-l | --log"
+    textBlock "Path where the log file should be written."
+    textBlockDefaults "(${logFile})"
     newline
-    textblockSwitches "--nc | --no-color | --no-colour"
-    textblock "Switch value. Disables ANSI colours in the log. Useful if you review the logs using a reader that does not parse ANSI colour codes."
-    textblockDefaults "(disabled: print logs in colour)"
+    textBlockSwitches "--nc | --no-color | --no-colour"
+    textBlock "Switch value. Disables ANSI colours in the log. Useful if you review the logs using a reader that does not parse ANSI colour codes."
+    textBlockDefaults "(disabled: print logs in colour)"
     newline
-    textblockSwitches "--log-console"
-    textblock "Switch value. Output log to console (stdout) instead of a log file. Can be combined with --nc if desired."
-    textblockDefaults "(disabled: output to log file)"
+    textBlockSwitches "--log-console"
+    textBlock "Switch value. Output log to console (stdout) instead of a log file. Can be combined with --nc if desired."
+    textBlockDefaults "(disabled: output to log file)"
     newline
-    textblockSwitches "--no-log"
-    textblock "Switch value. Do not create a log (i.e. no console, no file). You will not have *any* output from the script if you choose this option, so you will not know if updates succeeded or failed."
-    textblockDefaults "(disabled: output to log file)"
+    textBlockSwitches "--no-log"
+    textBlock "Switch value. Do not create a log (i.e. no console, no file). You will not have *any* output from the script if you choose this option, so you will not know if updates succeeded or failed."
+    textBlockDefaults "(disabled: output to log file)"
     newline
-    textblockSwitches "-h | --help | -?"
-    textblock "Display this help screen."
+    textBlockSwitches "-h | --help | -?"
+    textBlock "Display this help screen."
     newline
-    textblockSwitches "--examples"
-    textblock "Show some usage examples."
+    textBlockSwitches "--examples"
+    textBlock "Show some usage examples."
     newline
-    textblock "${magenta}--- DNS related parameters ---${norm}"
+    textBlock "${magenta}--- DNS related parameters ---${norm}"
     newline
-    textblockSwitches "-r | --record | --records"
-    textblock "Comma-delimited list of hostnames for which IP addresses should be updated in Cloudflare DNS. This parameter is REQUIRED. Note that this script will only *update* records, it will not create new ones. If you supply hostnames that are not already defined in DNS, the script will log a warning and will skip those hostnames."
+    textBlockSwitches "-r | --record | --records"
+    textBlock "Comma-delimited list of hostnames for which IP addresses should be updated in Cloudflare DNS. This parameter is REQUIRED. Note that this script will only *update* records, it will not create new ones. If you supply hostnames that are not already defined in DNS, the script will log a warning and will skip those hostnames."
     newline
-    textblockSwitches "-i | --ip | --ip-address | -a | --address"
-    textblock "New IP address for DNS host records. If you omit this, the script will attempt to auto-detect your public IP address and use that."
+    textBlockSwitches "-i | --ip | --ip-address | -a | --address"
+    textBlock "New IP address for DNS host records. If you omit this, the script will attempt to auto-detect your public IP address and use that."
     newline
-    textblockSwitches "-4 | --ip4 | --ipv4"
-    textblock "Switch value. Update Host 'A' records (IP4) only. Note that this script can only update either A *or* AAAA records. If you need to update both, you'll have to run the script once in IP4 mode and again in IP6 mode. If you specify both this switch and the IP6 switch, the last one specified will take effect."
-    textblockDefaults "(enabled: update A records)"
+    textBlockSwitches "-4 | --ip4 | --ipv4"
+    textBlock "Switch value. Update Host 'A' records (IP4) only. Note that this script can only update either A *or* AAAA records. If you need to update both, you'll have to run the script once in IP4 mode and again in IP6 mode. If you specify both this switch and the IP6 switch, the last one specified will take effect."
+    textBlockDefaults "(enabled: update A records)"
     newline
-    textblockSwitches "-6 | --ip6 | --ipv6"
-    textblock "Switch value. Update Host 'AAAA' records (IP6) only. Note that this script can only update either A *or* AAAA records. If you need to update both, you'll have to run the script once in IP4 mode and again in IP6 mode. If you specify both this switch and the IP4 switch, the last one specified will take effect."
-    textblockDefaults "(disabled: update A records)"
+    textBlockSwitches "-6 | --ip6 | --ipv6"
+    textBlock "Switch value. Update Host 'AAAA' records (IP6) only. Note that this script can only update either A *or* AAAA records. If you need to update both, you'll have to run the script once in IP4 mode and again in IP6 mode. If you specify both this switch and the IP4 switch, the last one specified will take effect."
+    textBlockDefaults "(disabled: update A records)"
     newline
-    textblock "Please refer to the repo README for more detailed information regarding this script and how to automate and monitor it."
+    textBlock "Please refer to the repo README for more detailed information regarding this script and how to automate and monitor it."
     newline
     exit 0
 }
@@ -195,15 +195,15 @@ newline() {
     printf "\n"
 }
 
-textblock() {
+textBlock() {
     printf "%s\n" "$1" | fold -w "$width" -s
 }
 
-textblockDefaults() {
+textBlockDefaults() {
     printf "%s%s%s\n" "$yellow" "$1" "$norm"
 }
 
-textblockSwitches() {
+textBlockSwitches() {
     printf "%s%s%s\n" "$cyan" "$1" "$norm"
 }
 
@@ -353,13 +353,13 @@ if [ -z "$ipAddress" ]; then
     # detect public ip address
     if [ "$ip4" -eq 1 ]; then
         if ! ipAddress="$(curl -s $ip4DetectionSvc)"; then
-            printf "ddns ip address: %serror%s\n" "$err" "$norm" >>"$logFile"
+            printf "ddns ip address:%s error%s\n" "$err" "$norm" >>"$logFile"
             exitError 10
         fi
     fi
     if [ "$ip6" -eq 1 ]; then
         if ! ipAddress="$(curl -s $ip6DetectionSvc)"; then
-            printf "ddns ip address: %serror%s\n" "$err" "$norm" >>"$logFile"
+            printf "ddns ip address:%s error%s\n" "$err" "$norm" >>"$logFile"
             exitError 10
         fi
     fi
