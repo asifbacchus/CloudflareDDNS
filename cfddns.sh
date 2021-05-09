@@ -370,14 +370,11 @@ case "$accountFile" in
     . "./$accountFile"
     ;;
 esac
-# TODO: cfEmail is *not* required when using bearer tokens
-if [ -z "$cfEmail" ]; then
-    printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
-    exitError 20
-elif [ -z "$cfKey" ]; then
+if [ -z "$cfKey" ]; then
     printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
     exitError 21
-elif [ -z "$cfZoneId" ]; then
+fi
+if [ -z "$cfZoneId" ]; then
     printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
     exitError 22
 fi
@@ -488,7 +485,6 @@ fi
 # 2:    cannot find or access required external program(s)
 # 3:    curl error (probably connection)
 # 10:   cannot auto-detect IP address
-# 20:   accountFile has a null or missing cfEmail variable
 # 21:   accountFile has a null or missing cfKey variable
 # 22:   accountFile has a null or missing cfZoneId variable
 # 25:   Cloudflare API error
