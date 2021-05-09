@@ -409,7 +409,7 @@ fi
     fi
 
     # iterate DNS records to update
-    dnsRecordsToUpdate="$(printf '%s' "${1}" | sed "s/${dnsSeparator}*$//")$dnsSeparator"
+    dnsRecordsToUpdate="$(printf '%s' "${dnsRecords}" | sed "s/${dnsSeparator}*$//")$dnsSeparator"
     while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator" ]; do
         record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
         dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
