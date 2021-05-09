@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# update CloudFlare DNS records with current (dynamic) IP address
+# update Cloudflare DNS records with current (dynamic) IP address
 #    Script by Asif Bacchus <asif@bacchus.cloud>
 #    Last modified: May 7, 2021
 #
@@ -51,16 +51,16 @@ exitError() {
         errMsg="Unable to auto-detect IP address. Try again later or supply the IP address to be used."
         ;;
     20)
-        errMsg="CloudFlare authorized email address (cfEmail) is either null or undefined. Please check your CloudFlare credentials file."
+        errMsg="Cloudflare authorized email address (cfEmail) is either null or undefined. Please check your Cloudflare credentials file."
         ;;
     21)
-        errMsg="CloudFlare authorized API key (cfKey) is either null or undefined. Please check your CloudFlare credentials file."
+        errMsg="Cloudflare authorized API key (cfKey) is either null or undefined. Please check your Cloudflare credentials file."
         ;;
     22)
-        errMsg="CloudFlare zone id (cfZoneId) is either null or undefined. Please check your CloudFlare credentials file."
+        errMsg="Cloudflare zone id (cfZoneId) is either null or undefined. Please check your Cloudflare credentials file."
         ;;
     25)
-        errMsg="Unable to query CloudFlare account. Please re-check your credentials and try again later."
+        errMsg="Unable to query Cloudflare account. Please re-check your credentials and try again later."
         ;;
     98)
         errMsg="One or more domain updates failed. Please review this log file for details."
@@ -71,12 +71,12 @@ exitError() {
         ;;
     esac
     printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$errMsg" "$1" "$norm" >>"$logFile"
-    printf "%s[%s] -- CloudFlare DDNS update-script: execution completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
+    printf "%s[%s] -- Cloudflare DDNS update-script: execution completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
     exit "$1"
 }
 
 exitOK() {
-    printf "%s[%s] -- CloudFlare DDNS update-script: execution complete --%s\n" "$ok" "$(stamp)" "$norm" >>"$logFile"
+    printf "%s[%s] -- Cloudflare DDNS update-script: execution complete --%s\n" "$ok" "$(stamp)" "$norm" >>"$logFile"
     exit 0
 }
 
@@ -86,7 +86,7 @@ stamp() {
 
 scriptHelp() {
     newline
-    printf "Update CloudFlare DNS host A/AAAA records with current IP address.\n"
+    printf "Update Cloudflare DNS host A/AAAA records with current IP address.\n"
     printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
     textblock "The only required parameter is '--records' which is a comma-delimited list of hostnames to update. However, there are several other options which may be useful to implement."
     textblock "Parameters are listed below and followed by a description of their effect. If a default value exists, it will be listed on the following line in (parentheses)."
@@ -94,7 +94,7 @@ scriptHelp() {
     textblock "${magenta}--- script related parameters ---${norm}"
     newline
     textblockSwitches "-c | --cred | --creds | --credentials | -f (deprecated, backward-compatibility)"
-    textblock "Path to file containing your CloudFlare *token* credentials. Please refer to the repo README for more information on format, etc."
+    textblock "Path to file containing your Cloudflare *token* credentials. Please refer to the repo README for more information on format, etc."
     textblockDefaults "(${accountFile})"
     newline
     textblockSwitches "-l | --log"
@@ -122,7 +122,7 @@ scriptHelp() {
     textblock "${magenta}--- DNS related parameters ---${norm}"
     newline
     textblockSwitches "-r | --record | --records"
-    textblock "Comma-delimited list of hostnames for which IP addresses should be updated in CloudFlare DNS. This parameter is REQUIRED. Note that this script will only *update* records, it will not create new ones. If you supply hostnames that are not already defined in DNS, the script will log a warning and will skip those hostnames."
+    textblock "Comma-delimited list of hostnames for which IP addresses should be updated in Cloudflare DNS. This parameter is REQUIRED. Note that this script will only *update* records, it will not create new ones. If you supply hostnames that are not already defined in DNS, the script will log a warning and will skip those hostnames."
     newline
     textblockSwitches "-i | --ip | --ip-address | -a | --address"
     textblock "New IP address for DNS host records. If you omit this, the script will attempt to auto-detect your public IP address and use that."
@@ -142,12 +142,12 @@ scriptHelp() {
 
 scriptExamples() {
     newline
-    printf "Update CloudFlare DNS host A/AAAA records with current IP address.\n"
+    printf "Update Cloudflare DNS host A/AAAA records with current IP address.\n"
     printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
     textblock "${magenta}--- usage examples ---${norm}"
     newline
     textblockSwitches "${scriptName} -r myserver.mydomain.net"
-    textblock "Update CloudFlare DNS records for myserver.mydomain.net with the auto-detected public IP4 address. Credentials will be expected in the default location and the log will be written in the default location also."
+    textblock "Update Cloudflare DNS records for myserver.mydomain.net with the auto-detected public IP4 address. Credentials will be expected in the default location and the log will be written in the default location also."
     newline
     textblockSwitches "${scriptName} -r myserver.mydomain.net -6"
     textblock "Same as above, but update AAAA host records with the auto-detected public IP6 address."
@@ -234,7 +234,7 @@ while [ $# -gt 0 ]; do
         colourizeLogFile=0
         ;;
     -c | --cred* | -f)
-        # path to CloudFlare credentials file
+        # path to Cloudflare credentials file
         if [ -n "$2" ]; then
             if [ -f "$2" ] && [ -s "$2" ]; then
                 accountFile="${2%/}"
@@ -295,7 +295,7 @@ fi
 [ -z "$dnsRecords" ] && badParam errMsg "You must specify at least one DNS record to update. Exiting."
 # verify credentials file exists and is not empty (default check)
 if [ ! -f "$accountFile" ] || [ ! -s "$accountFile" ]; then
-    badParam errMsg "Cannot find CloudFlare credentials file (${accountFile}). Exiting."
+    badParam errMsg "Cannot find Cloudflare credentials file (${accountFile}). Exiting."
 fi
 # turn off log file colourization if parameter is set
 if [ "$colourizeLogFile" -eq 0 ]; then
@@ -311,7 +311,7 @@ fi
 
 ### initial log entries
 {
-    printf "%s[%s] -- CloudFlare DDNS update-script: execution starting --%s\n" "$ok" "$(stamp)" "$norm"
+    printf "%s[%s] -- Cloudflare DDNS update-script: execution starting --%s\n" "$ok" "$(stamp)" "$norm"
     printf "%sParameters:\n" "$magenta"
     printf "script path: %s\n" "$scriptPath/$scriptName"
     printf "credentials file: %s\n" "$accountFile"
@@ -353,8 +353,8 @@ done
 
 printf "(end of parameter list)%s\n" "$norm" >>"$logFile"
 
-### read CloudFlare credentials
-printf "[%s] Reading CloudFlare credentials... " "$(stamp)" >>"$logFile"
+### read Cloudflare credentials
+printf "[%s] Reading Cloudflare credentials... " "$(stamp)" >>"$logFile"
 case "$accountFile" in
 /*)
     # absolute path, use as-is
@@ -451,7 +451,7 @@ fi
 # 20:   accountFile has a null or missing cfEmail variable
 # 21:   accountFile has a null or missing cfKey variable
 # 22:   accountFile has a null or missing cfZoneId variable
-# 25:   unable to query CloudFlare account
+# 25:   unable to query Cloudflare account
 # 97:   script completed with warnings
 # 98:   one or more updates failed
 # 99:   unspecified error occurred
