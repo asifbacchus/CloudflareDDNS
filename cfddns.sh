@@ -69,7 +69,6 @@ exitError() {
         errMsg="${failedHostCount} host update(s) failed. Any 'CF-ERR:' lines noted in this log may help determine what went wrong."
         ;;
     *)
-        writeLog err "Unspecified error."
         writeLog error "An unspecified error occurred. (code: 99)"
         printf "%s[%s] -- Cloudflare DDNS update-script: completed with error(s) --%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
         exit 99
