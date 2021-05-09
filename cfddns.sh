@@ -369,10 +369,12 @@ else
 fi
 
 # iterate DNS records to update
-dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
-while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
+dnsRecordsToUpdate="$(printf '%s' "${1}" | sed "s/${dnsSeparator}*$//")$dnsSeparator"
+while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator" ]; do
     record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
     dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
+
+    if [ -z "$record" ]; then continue; fi
     printf "updating record: %s\n" "$record" >>"$logFile"
 done
 
@@ -411,9 +413,11 @@ elif [ "$ip6" -eq 1 ]; then
 fi
 
 # iterate hosts to update
-while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
+while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator" ]; do
     record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
     dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
+
+    if [ -z "$record" ]; then continue; fi
     printf "[%s] Processing %s... " "$(stamp)" "$record" >>"$logFile"
 
     # exit if curl/network error
