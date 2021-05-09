@@ -219,16 +219,16 @@ writeLog() {
             printf "%s[%s] ERROR: %s (code: %s)%s\n" "$err" "$(stamp)" "$2" "$3" "$norm" >>"$logFile"
             ;;
         process)
-            printf "%s[%s] %s... %s" "$cyan" "$(stamp)" "$1" "$norm" >>"$logFile"
+            printf "%s[%s] %s... %s" "$cyan" "$(stamp)" "$2" "$norm" >>"$logFile"
             ;;
         process-done)
-            printf "%s%s%s\n" "$cyan" "$1" "$norm" >>"$logFile"
+            printf "%s%s%s\n" "$cyan" "$2" "$norm" >>"$logFile"
             ;;
         process-error)
             printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
             ;;
         process-warning)
-            printf "%s%s%s\n" "$warn" "$1" "$norm" >>"$logFile"
+            printf "%s%s%s\n" "$warn" "$2" "$norm" >>"$logFile"
             ;;
         stamped)
             printf "[%s] %s\n" "$(stamp)" "$2" >>"$logFile"
