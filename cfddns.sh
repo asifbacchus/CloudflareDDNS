@@ -66,7 +66,7 @@ exitError() {
         errMsg="Cloudflare API error. Please review any 'CF-ERR:' lines in this log for details."
         ;;
     26)
-        errMsg="${failedDomainCount} domain update(s) failed. Any 'CF-ERR:' lines noted in this log may help determine what went wrong."
+        errMsg="${failedHostCount} host update(s) failed. Any 'CF-ERR:' lines noted in this log may help determine what went wrong."
         ;;
     *)
         printf "%s[%s] ERR: Unknown error. (code: 99)%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
@@ -221,7 +221,7 @@ ip6=0
 ip4DetectionSvc="http://ipv4.icanhazip.com"
 ip6DetectionSvc="http://ipv6.icanhazip.com"
 invalidDomainCount=0
-failedDomainCount=0
+failedHostCount=0
 
 ### process startup parameters
 if [ -z "$1" ]; then
@@ -483,15 +483,15 @@ while [ -n "$dnsRecordsToUpdate" ] && [ "$dnsRecordsToUpdate" != "$dnsSeparator"
         printf "%s[%s] ERR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
         # do not exit with error, API error here is probably an update issue specific to this host
         # increment counter and note it after all processing finished
-        failedDomainCount=$((failedDomainCount + 1))
+        failedHostCount=$((failedHostCount + 1))
     fi
 done
 
 # exit
 if [ "$invalidDomainCount" -ne 0 ]; then
-    printf "%s[%s] WARNING: %s invalid domain(s) were supplied for updating%s\n" "$warn" "$(stamp)" "$invalidDomainCount" "$norm" >>"$logFile"
+    printf "%s[%s] WARNING: %s invalid host(s) were supplied for updating%s\n" "$warn" "$(stamp)" "$invalidDomainCount" "$norm" >>"$logFile"
 fi
-if [ "$failedDomainCount" -ne 0 ]; then
+if [ "$failedHostCount" -ne 0 ]; then
     exitError 26
 else
     exitOK
