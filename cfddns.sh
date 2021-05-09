@@ -63,10 +63,10 @@ exitError() {
         errMsg="Cloudflare zone id (cfZoneId) is either null or undefined. Please check your Cloudflare credentials file."
         ;;
     25)
-        errMsg="Cloudflare API error. Please check the logs for 'CF-ERR-NO' and 'CF-ERR-MESSAGE' entries for details."
+        errMsg="Cloudflare API error. Please review any 'CF-ERROR' lines in this log for details."
         ;;
     26)
-        errMsg="${failedDomainCount} domain update(s) failed. Please review this log file for details."
+        errMsg="${failedDomainCount} domain update(s) failed. Any 'CF-ERROR' lines noted in this log may help determine what went wrong."
         ;;
     *)
         printf "%s[%s] ERROR: An unspecified error occurred. Exiting.%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
@@ -83,8 +83,24 @@ exitOK() {
     exit 0
 }
 
-stamp() {
-    (date +%F" "%T)
+listCFErrors() {
+    # extract error codes and messages in separate variables, replace newlines with underscores
+    codes="$(printf "%s" "$1" | jq -r '.errors | .[] | .code' | tr '\n' '_')"
+    messages="$(printf "%s" "$1" | jq -r '.errors | .[] | .message' | tr '\n' '_')"
+
+    # iterate codes and messages and assemble into coherent messages in log
+    while [ -n "$codes" ] && [ -n "$messages" ]; do
+        # get first code and message in respective sets
+        code="${codes%%_*}"
+        message="${messages%%_*}"
+
+        # update codes and messages sets by removing first item in each set
+        codes="${codes#*_}"
+        messages="${messages#*_}"
+
+        # output to log
+        printf "[%s] CF-ERROR: Code %s. %s\n" "$(stamp)" "$code" "$message"
+    done
 }
 
 scriptExamples() {
@@ -413,11 +429,7 @@ while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && {
     cfSuccess="$(printf "%s" "$cfLookup" | jq -r '.success')"
     if [ "$cfSuccess" = "false" ]; then
         printf "%sERROR%s\n" "$err" "$norm"
-        # get error code and message from CF API
-        cfErrCode="$(printf "%s" "$cfLookup" | jq -r '.errors | .[] | .code')"
-        cfErrMessage="$(printf "%s" "$cfLookup" | jq -r '.errors | .[] | .message')"
-        printf "[%s] CF-ERR-NO: %s\n" "$(stamp)" "$cfErrCode"
-        printf "[%s] CF-ERR-MSG: %s\n" "$(stamp)" "$cfErrMessage"
+        listCFErrors "$cfLookup"
         exitError 25
     fi
 
@@ -462,11 +474,7 @@ while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && {
         printf "%s[%s] SUCCESS: IP address for %s updated%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
     else
         printf "%sFAILED%s\n" "$err" "$norm" >>"$logFile"
-        # get error code and message from CF API
-        cfErrCode="$(printf "%s" "$cfResult" | jq -r '.errors | .[] | .code')"
-        cfErrMessage="$(printf "%s" "$cfResult" | jq -r '.errors | .[] | .message')"
-        printf "[%s] CF-ERR-NO: %s\n" "$(stamp)" "$cfErrCode"
-        printf "[%s] CF-ERR-MSG: %s\n" "$(stamp)" "$cfErrMessage"
+        listCFErrors "$cfResult"
         printf "%s[%s] ERROR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
         # do not exit with error, API error here is probably an update issue specific to this host
         # increment counter and note it after all processing finished
