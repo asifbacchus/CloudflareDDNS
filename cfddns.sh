@@ -312,7 +312,7 @@ fi
 ### initial log entries
 {
     printf "%s[%s] -- Cloudflare DDNS update-script: execution starting --%s\n" "$ok" "$(stamp)" "$norm"
-    printf "%sParameters:\n" "$magenta"
+    printf "Parameters:\n"
     printf "script path: %s\n" "$scriptPath/$scriptName"
     printf "credentials file: %s\n" "$accountFile"
 } >>"$logFile"
@@ -351,7 +351,7 @@ while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && {
     printf "updating record: %s\n" "$record" >>"$logFile"
 done
 
-printf "(end of parameter list)%s\n" "$norm" >>"$logFile"
+printf "(end of parameter list)\n" >>"$logFile"
 
 ### read Cloudflare credentials
 printf "[%s] Reading Cloudflare credentials... " "$(stamp)" >>"$logFile"
