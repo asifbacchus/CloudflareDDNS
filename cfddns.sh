@@ -47,6 +47,9 @@ badParam() {
 
 exitError() {
     case "$1" in
+    3)
+        errMsg="Unable to connect to Cloudflare servers. This is probably a temporary networking issue. Please try again later."
+        ;;
     10)
         errMsg="Unable to auto-detect IP address. Try again later or supply the IP address to be used."
         ;;
@@ -60,10 +63,10 @@ exitError() {
         errMsg="Cloudflare zone id (cfZoneId) is either null or undefined. Please check your Cloudflare credentials file."
         ;;
     25)
-        errMsg="Unable to query Cloudflare account. Please re-check your credentials and try again later."
+        errMsg="Cloudflare API error. Please check the logs for 'CF-ERR-NO' and 'CF-ERR-MESSAGE' entries for details."
         ;;
-    98)
-        errMsg="One or more domain updates failed. Please review this log file for details."
+    26)
+        errMsg="${failedDomainCount} domain update(s) failed. Please review this log file for details."
         ;;
     *)
         printf "%s[%s] ERROR: An unspecified error occurred. Exiting.%s\n" "$err" "$(stamp)" "$norm" >>"$logFile"
@@ -367,6 +370,7 @@ case "$accountFile" in
     . "./$accountFile"
     ;;
 esac
+# TODO: cfEmail is *not* required when using bearer tokens
 if [ -z "$cfEmail" ]; then
     printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
     exitError 20
@@ -379,57 +383,92 @@ elif [ -z "$cfZoneId" ]; then
 fi
 printf "DONE%s\n" "$norm" >>"$logFile"
 
-### check if records to be updated exist and if they need updating, update as required
+### connect to Cloudflare and do what needs to be done!
 dnsRecordsToUpdate="$dnsRecords$dnsSeparator"
 if [ "$ip4" -eq 1 ]; then
     recordType="A"
 elif [ "$ip6" -eq 1 ]; then
     recordType="AAAA"
 fi
+
+# iterate hosts to update
 while [ "$dnsRecordsToUpdate" != "${dnsRecordsToUpdate#*${dnsSeparator}}" ] && { [ -n "${dnsRecordsToUpdate%%${dnsSeparator}*}" ] || [ -n "${dnsRecordsToUpdate#*${dnsSeparator}}" ]; }; do
     record="${dnsRecordsToUpdate%%${dnsSeparator}*}"
     dnsRecordsToUpdate="${dnsRecordsToUpdate#*${dnsSeparator}}"
     printf "[%s] Processing %s... " "$(stamp)" "$record" >>"$logFile"
-    # check for existing record, else exit with error (this script does NOT create new records, only updates them!)
-    if ! cfResult="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records?name=${record}&type=${recordType}" \
+
+    # exit if curl/network error
+    if ! cfLookup="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records?name=${record}&type=${recordType}" \
         -H "Authorization: Bearer ${cfKey}" \
         -H "Content-Type: application/json")"; then
         printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+        exitError 3
+    fi
+
+    # exit if API error
+    # exit here since API errors on GET request probably indicates authentication error which would affect all remaining operations
+    # no reason to continue processing other hosts and pile-up errors which might look like a DoS attempt
+    cfSuccess="$(printf "%s" "$cfLookup" | jq -r '.success')"
+    if [ "$cfSuccess" = "false" ]; then
+        printf "%sERROR%s\n" "$err" "$norm"
+        # get error code and message from CF API
+        cfErrCode="$(printf "%s" "$cfLookup" | jq -r '.errors | .[] | .code')"
+        cfErrMessage="$(printf "%s" "$cfLookup" | jq -r '.errors | .[] | .message')"
+        printf "[%s] CF-ERR-NO: %s\n" "$(stamp)" "$cfErrCode"
+        printf "[%s] CF-ERR-MSG: %s\n" "$(stamp)" "$cfErrMessage"
         exitError 25
     fi
-    resultCount="$(printf "%s" "$cfResult" | jq '.result_info.count')"
+
+    resultCount="$(printf "%s" "$cfLookup" | jq '.result_info.count')"
+
+    # skip to next host if cannot find existing host record (this script *updates* only, does not create!)
     if [ "$resultCount" = "0" ]; then
+        # warn if record of host not found
         printf "%sNOT FOUND%s\n" "$warn" "$norm" >>"$logFile"
         printf "%s[%s] WARNING: Cannot find existing record to update for DNS entry: %s%s\n" "$warn" "$(stamp)" "$record" "$norm" >>"$logFile"
         invalidDomainCount=$((invalidDomainCount + 1))
+        continue
+    fi
+
+    objectId=$(printf "%s" "$cfLookup" | jq -r '.result | .[] | .id')
+    currentIpAddr=$(printf "%s" "$cfLookup" | jq -r '.result | .[] | .content')
+    printf "FOUND: IP = %s\n" "$currentIpAddr" >>"$logFile"
+
+    # skip to next hostname if record already up-to-date
+    if [ "$currentIpAddr" = "$ipAddress" ]; then
+        printf "%s[%s] IP address for %s is already up-to-date%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
+        continue
+    fi
+
+    # update record
+    printf "%s[%s] Updating IP address for %s... " "$cyan" "$(stamp)" "$record" >>"$logFile"
+    updateJSON="$(jq -n --arg key0 content --arg value0 "${ipAddress}" '{($key0):$value0}')"
+
+    # exit if curl/network error
+    if ! cfResult="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records/${objectId}" \
+        -H "Authorization: Bearer ${cfKey}" \
+        -H "Content-Type: application/json" \
+        --data "${updateJSON}")"; then
+        printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
+        exitError 3
+    fi
+
+    # note update success or failure
+    cfSuccess="$(printf "%s" "$cfResult" | jq '.success')"
+    if [ "$cfSuccess" = "true" ]; then
+        printf "DONE%s\n" "$norm" >>"$logFile"
+        printf "%s[%s] SUCCESS: IP address for %s updated%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
     else
-        objectId=$(printf "%s" "$cfResult" | jq -r '.result | .[] | .id')
-        currentIpAddr=$(printf "%s" "$cfResult" | jq -r '.result | .[] | .content')
-        printf "FOUND: IP = %s\n" "$currentIpAddr" >>"$logFile"
-        # check if record needs updating
-        if [ "$currentIpAddr" = "$ipAddress" ]; then
-            printf "%s[%s] IP address for %s is already up-to-date%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
-        else
-            # update record
-            printf "%s[%s] Updating IP address for %s... " "$cyan" "$(stamp)" "$record" >>"$logFile"
-            updateJSON="$(jq -n --arg key0 content --arg value0 "${ipAddress}" '{($key0):$value0}')"
-            if ! cfResult="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${cfZoneId}/dns_records/${objectId}" \
-                -H "Authorization: Bearer ${cfKey}" \
-                -H "Content-Type: application/json" \
-                --data "${updateJSON}")"; then
-                printf "%sERROR%s\n" "$err" "$norm" >>"$logFile"
-                exitError 25
-            fi
-            updateSuccess="$(printf "%s" "$cfResult" | jq '.success')"
-            if [ "$updateSuccess" = "true" ]; then
-                printf "DONE%s\n" "$norm" >>"$logFile"
-                printf "%s[%s] SUCCESS: IP address for %s updated%s\n" "$ok" "$(stamp)" "$record" "$norm" >>"$logFile"
-            else
-                printf "%sFAILED%s\n" "$err" "$norm" >>"$logFile"
-                printf "%s[%s] ERROR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
-                failedDomainCount=$((failedDomainCount + 1))
-            fi
-        fi
+        printf "%sFAILED%s\n" "$err" "$norm" >>"$logFile"
+        # get error code and message from CF API
+        cfErrCode="$(printf "%s" "$cfResult" | jq -r '.errors | .[] | .code')"
+        cfErrMessage="$(printf "%s" "$cfResult" | jq -r '.errors | .[] | .message')"
+        printf "[%s] CF-ERR-NO: %s\n" "$(stamp)" "$cfErrCode"
+        printf "[%s] CF-ERR-MSG: %s\n" "$(stamp)" "$cfErrMessage"
+        printf "%s[%s] ERROR: Unable to update IP address for %s%s\n" "$err" "$(stamp)" "$record" "$norm" >>"$logFile"
+        # do not exit with error, API error here is probably an update issue specific to this host
+        # increment counter and note it after all processing finished
+        failedDomainCount=$((failedDomainCount + 1))
     fi
 done
 
@@ -438,7 +477,7 @@ if [ "$invalidDomainCount" -ne 0 ]; then
     printf "%s[%s] -- WARNING: %s invalid domain(s) were supplied for updating --%s\n" "$warn" "$(stamp)" "$invalidDomainCount" "$norm" >>"$logFile"
 fi
 if [ "$failedDomainCount" -ne 0 ]; then
-    exitError 98
+    exitError 26
 else
     exitOK
 fi
@@ -447,11 +486,11 @@ fi
 # 0:    normal exit, no errors
 # 1:    invalid or unknown parameter
 # 2:    cannot find or access required external program(s)
+# 3:    curl error (probably connection)
 # 10:   cannot auto-detect IP address
 # 20:   accountFile has a null or missing cfEmail variable
 # 21:   accountFile has a null or missing cfKey variable
 # 22:   accountFile has a null or missing cfZoneId variable
-# 25:   unable to query Cloudflare account
-# 97:   script completed with warnings
-# 98:   one or more updates failed
+# 25:   Cloudflare API error
+# 26:   one or more updates failed
 # 99:   unspecified error occurred
