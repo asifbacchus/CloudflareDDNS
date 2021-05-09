@@ -4,7 +4,7 @@
 # $Id$
 #############################################################################
 # Log: CloudFlare updater script (cfddns)
-# Revision 2.0  2021/05/08
+# Revision 2.1  2021/05/08
 # Written by Asif Bacchus
 #############################################################################
 
@@ -21,6 +21,7 @@ my $summaryFailedUpdate;
 my $summaryInvalidHost;
 my $summaryUpdated;
 my $summaryUpToDate;
+my $summaryWarning;
 
 my %reportHash = ();
 my $key;
@@ -30,14 +31,17 @@ my $key;
 if ($detailLevel == 0) {
     ### process logfile and summarize message types
     while (defined(my $ThisLine = <STDIN>)) {
-        if ($ThisLine =~ /ERROR: Unable to update IP address/) {
+        if ($ThisLine =~ /ERR: Unable to update IP address/) {
             $summaryFailedUpdate++;
         }
         elsif ($ThisLine =~ /ERROR: /) {
             $summaryErr++;
         }
-        elsif ($ThisLine =~ /WARNING: Cannot find existing record/) {
+        elsif ($ThisLine =~ /WARN: Cannot find existing record/) {
             $summaryInvalidHost++;
+        }
+        elsif ($ThisLine =~ /WARNING: /){
+            $summaryWarning++;
         }
         elsif ($ThisLine =~ /SUCCESS: /) {
             $summaryUpdated++;
@@ -54,14 +58,17 @@ if ($detailLevel == 0) {
     if ($summaryUpToDate > 0) {
         $reportHash{"Entries already up-to-date"} = $summaryUpToDate;
     }
-    if ($summaryInvalidHost > 0) {
-        $reportHash{"Undefined hosts"} = $summaryInvalidHost;
-    }
     if ($summaryFailedUpdate > 0) {
         $reportHash{"Hosts failed to update"} = $summaryFailedUpdate;
     }
+    if ($summaryInvalidHost > 0) {
+        $reportHash{"Undefined hosts"} = $summaryInvalidHost;
+    }
+    if ($summaryWarning > 0) {
+        $reportHash{"Total warnings"} = $summaryWarning;
+    }
     if ($summaryErr > 0) {
-        $reportHash{"Other errors"} = $summaryErr;
+        $reportHash{"Total errors"} = $summaryErr;
     }
 
     ### print hash table
@@ -73,18 +80,48 @@ if ($detailLevel == 0) {
 ### a summary count
 elsif ($detailLevel >= 1 && $detailLevel <= 4) {
     while (defined(my $ThisLine = <STDIN>)) {
-        if ($ThisLine =~ /ERROR: /) {
+        if ($ThisLine =~ /ERR: /) {
             print $ThisLine;
         }
-        elsif ($ThisLine =~ /WARNING: Cannot find existing/) {
+        elsif ($ThisLine =~ /WARN: /) {
             print $ThisLine;
         }
         elsif ($ThisLine =~ /SUCCESS: /) {
             print $ThisLine;
         }
+        elsif ($ThisLine =~ /already up-to-date/) {
+            print $ThisLine;
+        }
     }
 }
-### Any level 5 or above will echo the entire log. The log itself is purposefully terse
+### Level 5 includes warning and error tally count messages and Cloudflare
+### debugging messages
+elsif ($detailLevel == 5) {
+    while (defined(my $ThisLine = <STDIN>)) {
+        if ($ThisLine =~ /ERR: /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /ERROR: /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /CF-ERR: /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /WARN: /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /WARNING: /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /SUCCESS: /) {
+            print $ThisLine;
+        }
+        elsif ($ThisLine =~ /already up-to-date/) {
+            print $ThisLine;
+        }
+    }
+}
+### Any level 6 or above will echo the entire log. The log itself is purposefully terse
 ### so while this level of detail is likely rarely needed, it is still not an overwhelming
 ### level of detail.
 ### Generally, however, using this level of detail should only be done if you cannot view
@@ -95,8 +132,6 @@ elsif ($detailLevel > 5) {
         print $ThisLine;
     }
 }
-
-
 
 ### Exit gracefully
 exit (0);
