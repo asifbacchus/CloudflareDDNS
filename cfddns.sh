@@ -87,6 +87,32 @@ stamp() {
     (date +%F" "%T)
 }
 
+scriptExamples() {
+    newline
+    printf "Update Cloudflare DNS host A/AAAA records with current IP address.\n"
+    printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
+    textblock "${magenta}--- usage examples ---${norm}"
+    newline
+    textblockSwitches "${scriptName} -r myserver.mydomain.net"
+    textblock "Update Cloudflare DNS records for myserver.mydomain.net with the auto-detected public IP4 address. Credentials will be expected in the default location and the log will be written in the default location also."
+    newline
+    textblockSwitches "${scriptName} -r myserver.mydomain.net -6"
+    textblock "Same as above, but update AAAA host records with the auto-detected public IP6 address."
+    newline
+    textblockSwitches "${scriptName} -r myserver.mydomain.net,otherserver.mydomain.net -l /var/log/cfddns.log --nc"
+    textblock "Update DNS entries for both listed hosts using auto-detected IP4 address. Write a non-coloured log to '/var/log/cfddns.log'."
+    newline
+    textblockSwitches "${scriptName} -r myserver.mydomain.net,otherserver.mydomain.net -l /var/log/cfddns.log --ip6 --ip fd21:7a62:2737:9c3a::a151"
+    textblock "Update DNS AAAA entries for listed hosts using the *specified* IP address. Write a colourful log to the location specified."
+    newline
+    textblockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log --ip 1.2.3.4"
+    textblock "Update DNS A entry for listed hostname with the provided IP address. Read cloudflare credentials file from specified location, save log in specified location."
+    newline
+    textblockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log -6 -i fd21:7a62:2737:9c3a::a151"
+    textblock "Exact same as above, but change the AAAA record. This is how you run the script once for IP4 and again for IP6."
+    exit 0
+}
+
 scriptHelp() {
     newline
     printf "Update Cloudflare DNS host A/AAAA records with current IP address.\n"
@@ -143,30 +169,12 @@ scriptHelp() {
     exit 0
 }
 
-scriptExamples() {
-    newline
-    printf "Update Cloudflare DNS host A/AAAA records with current IP address.\n"
-    printf "%sUsage: %s --records host.domain.tld[,host2.domain.tld,...] [parameters]%s\n\n" "$bold" "$scriptName" "$norm"
-    textblock "${magenta}--- usage examples ---${norm}"
-    newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net"
-    textblock "Update Cloudflare DNS records for myserver.mydomain.net with the auto-detected public IP4 address. Credentials will be expected in the default location and the log will be written in the default location also."
-    newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net -6"
-    textblock "Same as above, but update AAAA host records with the auto-detected public IP6 address."
-    newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net,otherserver.mydomain.net -l /var/log/cfddns.log --nc"
-    textblock "Update DNS entries for both listed hosts using auto-detected IP4 address. Write a non-coloured log to '/var/log/cfddns.log'."
-    newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net,otherserver.mydomain.net -l /var/log/cfddns.log --ip6 --ip fd21:7a62:2737:9c3a::a151"
-    textblock "Update DNS AAAA entries for listed hosts using the *specified* IP address. Write a colourful log to the location specified."
-    newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log --ip 1.2.3.4"
-    textblock "Update DNS A entry for listed hostname with the provided IP address. Read cloudflare credentials file from specified location, save log in specified location."
-    newline
-    textblockSwitches "${scriptName} -r myserver.mydomain.net -c /root/cloudflare.creds -l /var/log/cfddns.log -6 -i fd21:7a62:2737:9c3a::a151"
-    textblock "Exact same as above, but change the AAAA record. This is how you run the script once for IP4 and again for IP6."
-    exit 0
+stamp() {
+    (date +%F" "%T)
+}
+
+newline() {
+    printf "\n"
 }
 
 textblock() {
@@ -181,9 +189,6 @@ textblockSwitches() {
     printf "%s%s%s\n" "$cyan" "$1" "$norm"
 }
 
-newline() {
-    printf "\n"
-}
 
 ### default variable values
 scriptPath="$(CDPATH='' \cd -- "$(dirname -- "$0")" && pwd -P)"
