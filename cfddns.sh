@@ -3,11 +3,13 @@
 #
 # update Cloudflare DNS records with current (dynamic) IP address
 #    Script by Asif Bacchus <asif@bacchus.cloud>
-#    Last modified: May 7, 2021
+#    Last modified: May 10, 2021
+#    Version 2.2
 #
 
 ### text formatting presets using tput
 if command -v tput >/dev/null; then
+    [ -z "$TERM" ] && export TERM=xterm
     bold=$(tput bold)
     cyan=$(tput setaf 6)
     err=$(tput bold)$(tput setaf 1)
