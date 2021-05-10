@@ -111,6 +111,13 @@ cfZoneId=83d564234134513245311b23412331dd
 
 You can save the file as anything you like and anywhere you’d like as long as you inform the script of its location using the `--credentials` parameter. By default, the script will look for a file named *cloudflare.credentials* in the same path as the script.
 
+Please remember that this file basically contains a password! As a result, it should be protected and access limited to the root account:
+
+```bash
+chown root:root /path/to/cloudflare.credentials
+chmod 600 /path/to/cloudflare.credentials
+```
+
 ### Bearer token
 
 I chose to use an API bearer token instead of a username/password or Global API token for security reasons. Your username/password and Global API token provide unfettered access to your account so if anyone gets hold of them, they can do anything to your account. An API bearer token, by contrast, can only do what you authorize it to do and you can revoke it at any time. Therefore, I suggest making a bearer token that is based on the “Edit zone DNS” template and restricted to the specific domain/zone you wish to update. Cloudflare provides an [excellent article](https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys) on how to generate this token.
@@ -135,12 +142,6 @@ Type=oneshot
 ExecStart=/full/path/to/your/renamed.file -parameter1 -parameter2 -parameter...
 ...
 ````
-
-Don’t forget to reload systemd after copying this file so it is recognized by the system! On most systems you can do this by running the following as root or via sudo:
-
-```bash
-systemctl daemon-reload
-```
 
 ### IP4 or IP6
 
@@ -185,7 +186,7 @@ The cfddns.service file includes two *ExecStart* lines, one without a specified 
 
 ## cfddns systemd timer unit
 
-This is the timer file that tells your system how often to call the *cfddns.service* file which runs the *cfddns&#46;sh* script.  By default, the timer is set for 5 minutes after the system boots up (to allow for other processes to initialize even on slower systems like a RasPi) and is then run every 15 minutes thereafter.  Remember when setting your timer that Cloudflare limits API calls to 1200 every 5 minutes.
+Just like the service file unit, this file **must** be copied to your */etc/systemd/system* directory (or equivalent directory if you're not running Debian/Ubuntu). This timer file unit tells your system how often to call the *cfddns.service* file which runs the *cfddns&#46;sh* script.  By default, the timer is set for 5 minutes after the system boots up (to allow for other processes to initialize even on slower systems like a RasPi) and is then run every 15 minutes thereafter.  Remember when setting your timer that Cloudflare limits API calls to 1200 every 5 minutes.
 
 You can change the timer by modifying the relevant section of the *cfddns.timer* file:
 
@@ -197,6 +198,12 @@ OnUnitActiveSec=15min
 
 *OnBootSec* is how long to wait after the system boots up before executing the *cfddns.service*.  *OnUnitActiveSec* will then wait the specified time from that first (after boot) call or after the timer is explicitly started before calling *cfddns.service* again.  I recommend setting OnUnitActiveSec to a low value (like 2 minutes) for testing then setting it to a more reasonable time (like 15
 minutes) after everything is working.
+
+After you’ve copied both the systemd unit and this timer unit, don’t forget to reload the systemd daemon so they are recognized by the system! On most systems you can do this by running the following as root or via sudo:
+
+```bash
+systemctl daemon-reload
+```
 
 ### Activation
 
@@ -219,6 +226,8 @@ systemctl status cfddns.timer
 ```
 
 It is NOT necessary to enable/start the *cfddns.service*, only the timer needs to be active.
+
+Also remember that if you make changes to settings like `OnUnitActiveSec` while testing or after testing is complete you *must* reload the systemd daemon! It will restart the appropriate units for you and your new settings will take effect immediately.
 
 ## Logging
 
