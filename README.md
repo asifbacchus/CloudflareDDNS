@@ -56,7 +56,7 @@ I recommend putting this script in your */usr/local/bin* directory or somewhere 
    sudo chmod +x /usr/local/bin/cfddns.sh
    ```
 
-> Note: You can rename *cfddns.sh* to anything you want, the script will auto-update itself. However, you **must** manually update the systemd service file (*cfddns.service*) `ExecStart` line as [explained below](#cfddns.service).
+> Note: You can rename *cfddns.sh* to anything you want, the script will auto-update itself. However, you **must** manually update the systemd service file (*cfddns.service*) `ExecStart` line as [explained below](#cfddns-script).
 
 ### Usage
 
