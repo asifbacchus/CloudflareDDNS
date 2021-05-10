@@ -2,9 +2,34 @@
 
 The Cloudflare DDNS update script's log file has been set up so that utilities like Logwatch can easily parse it.  In order to make that happen, a LogFile Group file, Service and Script have to be created for Logwatch to generate reports.  The correct (general) directory structure has been created in this git archive already.  Below are the details of each file.
 
+You can implement this setup easily by copying it into your */etc/logwatch* directory and then modifying the files as necessary:
+
+```bash
+cd /etc/logwatch
+cp -R /path/to/CloudflareDDNS_repo/etc/logwatch/* ./
+```
+
+If you need help getting logwatch installed and set-up, please [check out my blog post](#https://mytechiethoughts.com/linux/easily-monitor-your-logs-using-logwatch/).
+
 ## Contents <!-- omit in toc -->
 
 <!-- toc -->
+
+- [LogFile Group file (/etc/logwatch/conf/logfiles/cfddns.conf)](#logfile-group-file-etclogwatchconflogfilescfddnsconf)
+  * [Log file location](#log-file-location)
+  * [Archive location and name format](#archive-location-and-name-format)
+  * [External script for timestamp processing](#external-script-for-timestamp-processing)
+- [Service definition file (/etc/logwatch/conf/services/cfddns.conf)](#service-definition-file-etclogwatchconfservicescfddnsconf)
+  * [LogFile Group file definition](#logfile-group-file-definition)
+  * [Report title](#report-title)
+  * [Detail level](#detail-level)
+- [Service script (/etc/logwatch/scripts/services/cfddns)](#service-script-etclogwatchscriptsservicescfddns)
+  * [Detail levels](#detail-levels)
+- [Timestamp processing script (/etc/logwatch/scripts/shared/sqfullstampanywhere)](#timestamp-processing-script-etclogwatchscriptssharedsqfullstampanywhere)
+  * [The time format specification](#the-time-format-specification)
+  * [The search REGEX](#the-search-regex)
+- [Testing](#testing)
+- [Final thoughts](#final-thoughts)
 
 <!-- tocstop -->
 
@@ -42,9 +67,9 @@ This would tell Logwatch, when the archive option is set to true, that your *cfd
 
 ### External script for timestamp processing
 
-Since the log file uses a non-standard (according to Logwatch) method of datestamping, a custom filter had to be created.  See the [relevant](#timestamp-processing-script-etclogwatchscriptssharedsqfullstampanywhere) section of this document for more information.
+Since the log file uses a non-standard (according to Logwatch) method of date-stamping, a custom filter had to be created.  See the [relevant](#timestamp-processing-script-etclogwatchscriptssharedsqfullstampanywhere) section of this document for more information.
 
-The script file is called with an *\** before the filename.
+The script file is called with an asterisk (*\**) before the filename.
 
 ```Ini
 ...
@@ -96,7 +121,7 @@ Detail = 5
 
 ## Service script (/etc/logwatch/scripts/services/cfddns)
 
-Logwatch calls any script with a name that **matches the service name**.  You'll notice that I just named everything *cfddns* to keep things simple.  You can change this to whatever you want, however.  If you changed the service name to *"cloudflare*.conf", for example, you would have to rename this script file to "*cloudflare*" with no extension.  Note: The script is a PERL file (note the
+Logwatch calls any script with a name that **matches the service name**.  You'll notice that I just named everything *cfddns* to keep things simple.  You can change this to whatever you want.  If you changed the service name to *"cloudflare*.conf", for example, you would have to rename this script file to "*cloudflare*" with no extension.  Note: The script is a PERL file (note the
 shebang) but it can be written in any language.
 
 In essence, Logwatch just spits out the log file(s) defined in the LogFile Group file as standard input (STDIN) for the script and then takes whatever is output (STDOUT) from the script to assemble into its report.
@@ -106,45 +131,40 @@ In essence, Logwatch just spits out the log file(s) defined in the LogFile Group
 The script supports four (4) detail levels as follows:
 
 - **Level 0: Summary output only**
-  - This will display an aggregate total of certain logged elements.  It will
-    display the total number of hostnames (A and AAAA) that are already
-    up-to-date, those that needed updating, those successfully updated and the
-    total number of errors (of any type) encountered by the script.  All totals
-    are relative to the reporting period Logwatch is using (--range parameter).
-
-    **This is the recommended reporting level.**  It does not take up much space
-    and is quick to read.  If you see successful updates match the number of
-    needed updates and no errors logged, then things are working properly.  If
-    you notice errors, you should consult the full logs.
+  - This will display a simple aggregate of status message categories over the reporting period:
+    - Entries successfully updated
+    - Entries already up-to-date
+    - Hosts failed to update
+    - Undefined hosts (i.e. requested to update but record doesn’t exist)
+    - Total warning messages
+    - Total errors
+    
+  - **This is the recommended reporting level.**  It does not take up much space and is quick to read.  If you see successful updates and/or up-to-date numbers match what you expect and no errors logged, then you can assume things are working properly. If the numbers aren’t right or you see errors/warnings, then you can investigate the situation by consulting the actual logs or increasing the detail level in logwatch.
+  
+  - For example: Let’s suppose you are running an update every 15 minutes. Doing the math...
+    $$
+    (update_{success}) + (update_{up-to-date}) = (24h \times 60min)/15min = 96
+    $$
+    Therefore, you expect to see ‘Entries successfully updated’ and ‘Entries already up-to-date’ total *96*. If that’s the case and no errors or warnings are logged, things are ok. Pretty easy, right? That’s why this is the recommended filter setting.
 - **Levels 1-4: Critical messages**
-  - This uses the data which is summarized by Level 0 but outputs the actual
-    messages in the log file.  For example, you will see the actual text of the
-    errors logged instead of just a total number of errors.  This level of
-    reporting is useful when *initially* monitoring the script's operation since
-    you can see the actual text of any generated errors.
-- **Level 5: Verbose (debugging) output**
-  - Like the previous level, this outputs the actual messages found in the log
-    file.  However, it also includes *[INFO] tags* which contain logged messages
-    such as the detected IP address and the specific names of any hostnames not
-    found in your Cloudflare account, etc.  This level of reporting is useful in
-    diagnosing why errors are occurring or if you just want more insight into
-    how the script works.
-
-    **This level of output will make your Logwatch reports longer and consume
-    more of your time to review. You should not use this level day-to-day.**
+  
+  - This uses the data which is summarized by Level 0 but outputs the *actual messages* in the log file.  For example, you will see the actual text of the errors logged instead of just a total number of errors.  This level of reporting is useful when *initially* monitoring the script's operation since you can see the text of any generated errors.
+  - Levels 1, 2, 3 & 4 are identical so pick your favourite number.
+- **Level 5: Verbose output**
+  - Like the previous level, this outputs the actual messages found in the log file.  However, it also includes *CF-ERR* tags and tally count messages. This can help you pinpoint why the Cloudflare API is rejecting your requests by letting you see things like authentication errors or malformed addresses, etc.
+  - Honestly, this is not much more information than L1-L4 and is often a better choice while debugging any issues since you get the Cloudflare API messages.
+  - This level of output is much more verbose than the summary report. It also takes *much* more time and patience to review so it is only recommended when you’re dealing with issues.
+  - This is *not* recommended for day-to-day or routine reports.
 - **Levels 6+: Complete log file dump**
-  - Any number greater than 5 passed as a detail level will trigger the script
-    to dump the entire log file out to Logwatch line-by-line.  This is useful
-    only if you are debugging an issue and cannot get access to the actual raw
-    log file itself.  The actual log file is colour-coded which makes it much
-    easier to read for debugging purposes.
-
-    **Use this detail level only when you need to see the entire log file and
-    cannot otherwise access the log file.**
+  - Any number greater than 5 passed as a detail level will trigger the script to dump the entire log file out to Logwatch line-by-line.  This is really only useful during debugging or dealing with serious issues where you do not have access to the actual log file. While this is an exact ‘echo’ of the log file, it likely will not be colour-coded which makes it harder to review.
+  - **Use this detail level only when you need to see the entire log file and cannot otherwise access the log file.**
+  - Depending on how your logwatch treats this log dump, you may see gibberish control codes like *\e[0m;]*. If this is the case, run the script with the `--no-colour` or `--nc` option to remove ANSI colour formatting.
 
 ## Timestamp processing script (/etc/logwatch/scripts/shared/sqfullstampanywhere)
 
 This is basically a modified version of the '*applyeurodate*' script that comes with Logwatch.  It had to be modified to search within [square brackets] and to accept characters coming before the stamp (i.e. ANSI colour codes).  If you change the '**stamp**' variable in the updater script to update the timestamp to your liking (which to totally fine!) then you'll probably have to update this file.  There are two lines you need to modify to suit your new '**stamp**' variable.
+
+> This entire section is only applicable if you are a very curious person or if you change the hard-coded ‘stamp’ function in the script. If you did not make any changes and you like a little mystery in your life, you can safely skip this entire section.
 
 ### The time format specification
 
@@ -166,7 +186,7 @@ $SearchDate = TimeFilter('%m/%d/%Y %H:%M');
 
 ### The search REGEX
 
-The PERL script uses a '*regular expression*' (REGEX) to search within the log file for '*$SearchDate*'.  For the default datestamp, this specification looks like:
+The PERL script uses a '*regular expression*' (REGEX) to search within the log file for '*$SearchDate*'.  For the default date stamp, this specification looks like:
 
 ```Perl
 ...
@@ -174,7 +194,7 @@ if ($ThisLine =~ m/\[$SearchDate\] /o) {
 ...
 ```
 
-The REGEX appears between '*m/*' and '*/o*'.  In this case, it searches for '*$SearchDate*' inside [square brackets] appearing anywhere on the line.  This is because ANSI colour-codes often appear before the datestamp in the default log file.  If you have modified this so that your datestamp appears at the beginning of the line and in the example format in the section above (using slashes instead of dashes) then you'd rewrite this REGEX as follows:
+The REGEX appears between '*m/*' and '*/o*'.  In this case, it searches for '*$SearchDate*' inside [square brackets] appearing anywhere on the line.  This is because ANSI colour-codes often appear before the date stamp in the default log file.  If you have modified this so that your date stamp appears at the beginning of the line and in the example format in the section above (using slashes instead of dashes) then you'd rewrite this REGEX as follows:
 
 ```Perl
 ...
