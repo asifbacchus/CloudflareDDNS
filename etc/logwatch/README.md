@@ -15,17 +15,17 @@ If you need help getting logwatch installed and set-up, please [check out my blo
 
 <!-- toc -->
 
-- [LogFile Group file (/etc/logwatch/conf/logfiles/cfddns.conf)](#logfile-group-file-etclogwatchconflogfilescfddnsconf)
+- [LogFile Group file](#logfile-group-file)
   * [Log file location](#log-file-location)
   * [Archive location and name format](#archive-location-and-name-format)
   * [External script for timestamp processing](#external-script-for-timestamp-processing)
-- [Service definition file (/etc/logwatch/conf/services/cfddns.conf)](#service-definition-file-etclogwatchconfservicescfddnsconf)
+- [Service definition file](#service-definition-file)
   * [LogFile Group file definition](#logfile-group-file-definition)
   * [Report title](#report-title)
   * [Detail level](#detail-level)
-- [Service script (/etc/logwatch/scripts/services/cfddns)](#service-script-etclogwatchscriptsservicescfddns)
+- [Service script](#service-script)
   * [Detail levels](#detail-levels)
-- [Timestamp processing script (/etc/logwatch/scripts/shared/sqfullstampanywhere)](#timestamp-processing-script-etclogwatchscriptssharedsqfullstampanywhere)
+- [Timestamp processing script](#timestamp-processing-script)
   * [The time format specification](#the-time-format-specification)
   * [The search REGEX](#the-search-regex)
 - [Testing](#testing)
@@ -33,7 +33,9 @@ If you need help getting logwatch installed and set-up, please [check out my blo
 
 <!-- tocstop -->
 
-## LogFile Group file (/etc/logwatch/conf/logfiles/cfddns.conf)
+## LogFile Group file
+
+> This file is located within the repo at */etc/logwatch/conf/logfiles/cfddns.conf*
 
 ### Log file location
 
@@ -79,7 +81,9 @@ The script file is called with an asterisk (*\**) before the filename.
 
 If you change the name of this file, you will have to change this line. Remember that whatever you type here as a name is converted to all-lowercase so your filename should be all lowercase also.
 
-## Service definition file (/etc/logwatch/conf/services/cfddns.conf)
+## Service definition file
+
+> This file is located within the repo at */etc/logwatch/conf/services/cfddns.conf*
 
 ### LogFile Group file definition
 
@@ -119,7 +123,9 @@ Simply change it to the value you want enforced.  For example, here I'm setting 
 Detail = 5
 ```
 
-## Service script (/etc/logwatch/scripts/services/cfddns)
+## Service script
+
+> This file is located within the repo at */etc/logwatch/scripts/services/cfddns*
 
 Logwatch calls any script with a name that **matches the service name**.  You'll notice that I just named everything *cfddns* to keep things simple.  You can change this to whatever you want.  If you changed the service name to *"cloudflare*.conf", for example, you would have to rename this script file to "*cloudflare*" with no extension.  Note: The script is a PERL file (note the
 shebang) but it can be written in any language.
@@ -160,7 +166,9 @@ The script supports four (4) detail levels as follows:
   - **Use this detail level only when you need to see the entire log file and cannot otherwise access the log file.**
   - Depending on how your logwatch treats this log dump, you may see gibberish control codes like *\e[0m;]*. If this is the case, run the script with the `--no-colour` or `--nc` option to remove ANSI colour formatting.
 
-## Timestamp processing script (/etc/logwatch/scripts/shared/sqfullstampanywhere)
+## Timestamp processing script
+
+> This file is located within the repo at */etc/logwatch/scripts/shared/sqfullstampanywhere*
 
 This is basically a modified version of the '*applyeurodate*' script that comes with Logwatch.  It had to be modified to search within [square brackets] and to accept characters coming before the stamp (i.e. ANSI colour codes).  If you change the '**stamp**' variable in the updater script to update the timestamp to your liking (which to totally fine!) then you'll probably have to update this file.  There are two lines you need to modify to suit your new '**stamp**' variable.
 

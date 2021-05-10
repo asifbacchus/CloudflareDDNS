@@ -7,7 +7,7 @@ Update your *existing* Cloudflare DNS records with your current (dynamic) IP add
 <!-- toc -->
 
 - [Prerequisites](#prerequisites)
-- [cfddns&#46;sh](#cfddns%2346sh)
+- [cfddns script](#cfddns-script)
   * [Installation](#installation)
   * [Usage](#usage)
     + [Parameters](#parameters)
@@ -15,10 +15,10 @@ Update your *existing* Cloudflare DNS records with your current (dynamic) IP add
   * [File structure](#file-structure)
   * [Bearer token](#bearer-token)
   * [Zone ID](#zone-id)
-- [cfddns.service](#cfddnsservice)
-  * [IP4 and/or IP6](#ip4-andor-ip6)
+- [cfddns systemd service unit](#cfddns-systemd-service-unit)
+  * [IP4 or IP6](#ip4-or-ip6)
     + [Examples](#examples)
-- [cfddns.timer](#cfddnstimer)
+- [cfddns systemd timer unit](#cfddns-systemd-timer-unit)
   * [Activation](#activation)
 - [Logging](#logging)
   * [Using Logwatch to monitor this script](#using-logwatch-to-monitor-this-script)
@@ -37,7 +37,7 @@ apt install -y curl jq
 
 While the script does *not* require root privileges, you will need sudo/root access to install the *systemd* service and timer.
 
-## cfddns&#46;sh
+## cfddns script
 
 ### Installation
 
@@ -124,7 +124,7 @@ This is required by the Cloudflare API so it knows which zone you are editing an
 To get your Zone ID, log into your Cloudflare account and open the domain in question. On the overview page, scroll down a bit and look to the right. You will see your Zone ID listed there. Copy that string into your configuration file.
 
 
-## cfddns.service
+## cfddns systemd service unit
 
 This file **must** be copied to your */etc/systemd/system* directory (or equivalent directory if you're not running Debian/Ubuntu). If you change the name of the cfddns&#46;sh file, you must update the filename in the `ExecStart` line as shown below:
 
@@ -142,7 +142,7 @@ Don’t forget to reload systemd after copying this file so it is recognized by 
 systemctl daemon-reload
 ```
 
-### IP4 and/or IP6
+### IP4 or IP6
 
 The cfddns.service file includes two *ExecStart* lines, one without a specified IP-protocol parameter (default IP4) and the other with the -6 (IP6) parameter. The service will run the cfddns&#46;sh script in default (IP4) mode with specified parameters first and then will run the script again in IP6 mode with specified parameters.
 
@@ -183,7 +183,7 @@ The cfddns.service file includes two *ExecStart* lines, one without a specified 
    ...
    ```
 
-## cfddns.timer
+## cfddns systemd timer unit
 
 This is the timer file that tells your system how often to call the *cfddns.service* file which runs the *cfddns&#46;sh* script.  By default, the timer is set for 5 minutes after the system boots up (to allow for other processes to initialize even on slower systems like a RasPi) and is then run every 15 minutes thereafter.  Remember when setting your timer that Cloudflare limits API calls to 1200 every 5 minutes.
 
